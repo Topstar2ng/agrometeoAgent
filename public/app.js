@@ -1,10 +1,18 @@
+/**
+ * AGROMETEO AGENT - FRONTEND CORE
+ * Version: 1.1.0
+ * Description: Vue.js application handling real-time weather telemetry, 
+ * Leaflet map visualizations, AI-driven agricultural insights, and authentication.
+ */
+
 const { createApp, ref, onMounted, onUnmounted, computed, watch, nextTick } = Vue;
 
 createApp({
     setup() {
+        // ==========================================
+        // 1. STATE MANAGEMENT & REACTIVE REFS
+        // ==========================================
         const activeTab = ref('weather');
-        
-        // Disease Detection States
         const diseaseReport = ref(null);
         const diseaseCropSelection = ref('Maize');
 
@@ -21,7 +29,6 @@ createApp({
             soilMoisture: false
         });
         
-        // NEW LOCATION METHOD STATE DECLARATIONS
         const locationMode = ref('auto');
         const liveCoords = ref({ lat: 9.0765, lon: 7.3986 });
         const manualCoords = ref({ lat: 6.5244, lon: 3.3792 });
@@ -30,7 +37,6 @@ createApp({
         const weatherData = ref(null);
         const loading = ref(true);
         const error = ref(null);
-        
         // Auth States
         const showAuthModal = ref(false);
         const authMode = ref('login');
@@ -42,12 +48,16 @@ createApp({
             { name: 'Chief Operator Admin', email: 'admin@agriclimate.io', password: 'password123' }
         ]);
         
+        // Non-reactive instances for performance
         let chartInstance = null;
         let mapInstance = null;
         let mapMarker = null;
         let activeLayers = {};
 
-        // COMPUTED PROPERTIES
+        // ==========================================
+        // 2. COMPUTED PROPERTIES (LOGIC DERIVATION)
+        // ==========================================
+        
         const activeCoordinates = computed(() => {
             if (locationMode.value === 'manual') {
                 return { lat: manualCoords.value.lat, lon: manualCoords.value.lon };
@@ -65,7 +75,10 @@ createApp({
             return "Selected Sector";
         });
 
-        // Method to change active tab
+        // ==========================================
+        // 3. NAVIGATION & UI METHODS
+        // ==========================================
+
         const setActiveTab = (tabName) => {
             activeTab.value = tabName;
             console.log(`🔄 Active tab changed to: ${tabName}`);
@@ -81,13 +94,15 @@ createApp({
             }
         };
 
-        // Toggle map layers
+        // ==========================================
+        // 4. GEOSPATIAL ENGINE (LEAFLET & LAYERS)
+        // ==========================================
+
         const toggleLayer = (layerName) => {
             activeMapLayers.value[layerName] = !activeMapLayers.value[layerName];
             updateMapLayers();
         };
 
-        // Update map layers based on active toggles
         const updateMapLayers = () => {
             if (!mapInstance) return;
             
@@ -99,7 +114,6 @@ createApp({
             
             // Calculate heat index
             const heatIndex = calculateHeatIndex(temp, humidity);
-            
             // Update or create layers based on active toggles
             if (activeMapLayers.value.rainfall && !activeLayers.rainfall) {
                 activeLayers.rainfall = createRainfallLayer(lat, lon, rainfall);
@@ -150,13 +164,11 @@ createApp({
             }
         };
 
-        // Helper function to calculate heat index
         const calculateHeatIndex = (temp, humidity) => {
             // Simplified heat index calculation
             return temp + (humidity / 100) * 5;
         };
 
-        // Create Rainfall Layer
         const createRainfallLayer = (lat, lon, rainfall) => {
             const rainfallIntensity = rainfall > 20 ? 'Heavy' : rainfall > 5 ? 'Moderate' : 'Light';
             const circle = L.circle([lat, lon], {
@@ -204,7 +216,6 @@ createApp({
             return circle;
         };
 
-        // Create Temperature Layer
         const createTemperatureLayer = (lat, lon, temp) => {
             let color, description;
             if (temp > 35) { color = '#ef4444'; description = 'Extreme Heat'; }
@@ -242,7 +253,6 @@ createApp({
             return circle;
         };
 
-        // Create Wind Layer
         const createWindLayer = (lat, lon, windSpeed) => {
             let color, risk;
             if (windSpeed > 40) { color = '#ef4444'; risk = 'Severe'; }
@@ -286,7 +296,6 @@ createApp({
             return circle;
         };
 
-        // Create Vegetation Health Layer
         const createVegetationLayer = (lat, lon) => {
             const ndvi = Math.random() * 0.6 + 0.2; // Simulated NDVI value
             let color, health;
@@ -315,7 +324,6 @@ createApp({
             return circle;
         };
 
-        // Create Heat Index Layer
         const createHeatIndexLayer = (lat, lon, heatIndex) => {
             let color, risk;
             if (heatIndex > 40) { color = '#dc2626'; risk = 'Danger'; }
@@ -343,7 +351,6 @@ createApp({
             return circle;
         };
 
-        // Create Soil Moisture Layer
         const createSoilMoistureLayer = (lat, lon) => {
             const moisture = Math.random() * 100; // Simulated soil moisture
             let color, status;
@@ -372,7 +379,10 @@ createApp({
             return circle;
         };
 
-        // GEOLOCATION AUTOMATIC SCAN ENGINE
+        // ==========================================
+        // 5. TELEMETRY & DATA ACQUISITION
+        // ==========================================
+
         const detectLiveLocation = () => {
             if (!navigator.geolocation) {
                 alert("Geolocation engine not supported by this web node browser architecture.");
@@ -397,7 +407,6 @@ createApp({
             fetchOpenMeteoTelemetry();
         };
 
-        // MAIN WEATHER FETCHER
         const fetchOpenMeteoTelemetry = async () => {
             loading.value = true;
             error.value = null;
@@ -539,7 +548,6 @@ createApp({
             
             if (mapMarker) {
                 mapMarker.setLatLng([lat, lon]);
-                
                 const temp = weatherData.value?.current?.temperature_2m || '--';
                 const rain = weatherData.value?.current?.precipitation || '0';
                 const humidity = weatherData.value?.current?.relative_humidity_2m || '--';
@@ -566,7 +574,10 @@ createApp({
             updateMapLayers();
         };
 
-        // DISEASE DETECTION FUNCTION
+        // ==========================================
+        // 6. AGRICULTURAL DIAGNOSTICS (DISEASES)
+        // ==========================================
+
         const generateDiseaseReport = async () => {
             generatingReport.value = true;
             diseaseReport.value = null;
@@ -669,7 +680,9 @@ createApp({
             }
         };
 
-        // executeAuthSubmit, closeAuthWorkspace, and logoutSession:
+        // ==========================================
+        // 7. AUTHENTICATION SYSTEM (JWT & MYSQL)
+        // ==========================================
 
         const executeAuthSubmit = async () => {
             authLoading.value = true;
@@ -799,24 +812,20 @@ createApp({
             const savedUser = localStorage.getItem('currentUser');
             
             if (token && savedUser) {
-                // Verify token with backend (optional but recommended)
                 isAuthenticated.value = true;
                 currentUser.value = JSON.parse(savedUser);
-                
-                // You could also verify the token with your backend here
-                // fetch('/api/auth/verify', {
-                //     headers: { 'Authorization': `Bearer ${token}` }
-                // }).catch(() => logoutSession());
             }
         };
+
+        // ==========================================
+        // 8. ANALYTICS ENGINE (CHARTS)
+        // ==========================================
 
         const renderEngineAnalyticsPlot = () => {
             const chartDom = document.querySelector("#engine-macro-chart");
             if (!chartDom || !weatherData.value) return;
-
             let seriesData = [];
             let categoriesData = [];
-
             if (activeView.value === '7day') {
                 categoriesData = weatherData.value.daily.time.map(t => formatDayName(t));
                 seriesData = [
@@ -857,7 +866,10 @@ createApp({
         const formatDayName = (dateStr) => { return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' }); };
         const getForecastIconClass = (rain) => { return rain === 0 ? 'fa-sun text-amber-400' : rain <= 4 ? 'fa-cloud-sun text-emerald-400' : 'fa-cloud-showers-heavy text-blue-400'; };
 
-        // AI REPORTING STATES
+        // ==========================================
+        // 9. AI AGENT & CHAT SUBSYSTEM
+        // ==========================================
+
         const aiReport = ref(null);
         const generatingReport = ref(false);
         const cropSelection = ref('Maize');
@@ -909,7 +921,6 @@ createApp({
             }
         };
 
-        // CHAT STATES
         const isChatOpen = ref(false);
         const chatMessage = ref('');
         const isChatTyping = ref(false);
@@ -960,7 +971,10 @@ createApp({
             if (box) box.scrollTop = box.scrollHeight;
         };
 
-        // ALERTS
+        // ==========================================
+        // 10. ALERTING & NETWORK MONITORING
+        // ==========================================
+
         const activeAlerts = computed(() => {
             const list = [];
             const current = weatherData.value?.current;
@@ -985,7 +999,6 @@ createApp({
             return list;
         });
 
-        // NETWORK MONITORING
         const isOnline = ref(navigator.onLine);
         const connectionType = ref('unknown');
         const networkQuality = ref('good');
@@ -1028,7 +1041,10 @@ createApp({
             }
         }, { deep: true });
         
-        // LIFECYCLE
+        // ==========================================
+        // 11. LIFECYCLE HOOKS
+        // ==========================================
+
         onMounted(async () => {
             window.addEventListener('online', handleOnline);
             window.addEventListener('offline', handleOffline);
@@ -1037,7 +1053,6 @@ createApp({
             initConnectionMonitoring();
             updateConnectionQuality();
             
-            // Check authentication status on load
             checkAuthStatus();
             
             const savedTab = localStorage.getItem('activeTab');
@@ -1047,7 +1062,6 @@ createApp({
             
             await detectLiveLocation();
             
-            // If weather tab is active on load, initialize map after a short delay
             if (activeTab.value === 'weather') {
                 setTimeout(() => {
                     if (weatherData.value) {
@@ -1067,6 +1081,9 @@ createApp({
             }
         });
 
+        // ==========================================
+        // 12. EXPOSED INTERFACE
+        // ==========================================
         return {
             activeTab, setActiveTab, locationMode, liveCoords, manualCoords, selectedLocationIndex, 
             activeCoordinates, activeLatLonString, activeLocationName, activeView, weatherData, 
@@ -1077,9 +1094,7 @@ createApp({
             parseMarkdownToHtml, isChatOpen, chatMessage, chatMessages, isChatTyping, toggleChat, 
             sendChatMessage, setChatPreset, activeAlerts, scrollChatBottom, isOnline, networkQuality, 
             connectionType, showOfflineBanner,
-            // Disease Detection exports
             diseaseReport, diseaseCropSelection, generateDiseaseReport,
-            // Map Layer exports
             activeMapLayers, toggleLayer, showPassword
         };
     }

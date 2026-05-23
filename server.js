@@ -1,33 +1,63 @@
-require('dotenv').config(); 
+/**
+ * AGROMETEO AGENT - SERVER CORE
+ * Version: 1.0.0
+ * Description: Backend orchestrator for climate data processing, AI-driven agricultural 
+ * insights, and secure farmer authentication using MySQL.
+ */
+
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const nodeCache = require('node-cache');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
+const SERVER_PORT = process.env.PORT || 3200;
+const JWT_SECRET = process.env.JWT_SECRET || "agrometeo_super_secure_vector_key_2026";
 
-// 1. GLOBAL MIDDLEWARE
+// ==========================================
+// 1. GLOBAL MIDDLEWARE & SUBSYSTEMS
+// ==========================================
 
+// Enable Cross-Origin Resource Sharing
 app.use(cors({
-    origin: '*', // For development - restrict in production
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Parse incoming JSON payloads
 app.use(express.json());
 
-// Initialize Gemini Subsystem
+// Initialize Gemini AI Engine
 const aiEngine = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 2. ISOLATED API ROUTER
-const apiRouter = express.Router();
+// Initialize Server-side Cache (5-minute TTL)
+const aiCache = new nodeCache({ stdTTL: 300 });
 
-const nodeCache = require('node-cache');
-const aiCache = new nodeCache({ stdTTL: 300 }); // Cache for 5 minutes
+// ==========================================
+// 2. DATABASE CONFIGURATION (MySQL)
+// ==========================================
 
-apiRouter.get('/test', (req, res) => {
-    res.json({ status: "online", message: "API Communication established." });
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'agrometeo_db',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
+// ==========================================
+// 3. AI & DIAGNOSTIC API ROUTES
+// ==========================================
+
+const apiRouter = express.Router();
 apiRouter.post('/consult', async (req, res) => {
     console.log("📨 [Hit Detected] Processing incoming diagnostic payload for crop:", req.body?.crop);
     
@@ -73,10 +103,10 @@ apiRouter.post('/consult', async (req, res) => {
             return res.json(aiCache.get(cacheKey));
         }
 
-        // Use gemini-3.5-flash as recommended
+        // Execute AI Generation
         const modelInstance = aiEngine.getGenerativeModel({ 
-            model: "gemini-3.5-flash",
-            generationConfig: { responseMimeType: "application/json" }
+            model: "gemini-1.5-flash", // Updated to stable flash model
+            generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
         });
 
         const predictionResult = await modelInstance.generateContent(agriculturalPrompt);
@@ -104,16 +134,6 @@ apiRouter.post('/consult', async (req, res) => {
     }
 });
 
-app.use('/api/ai', apiRouter);
-
-// 3. STATIC FILES & CATCH-ALL FRONTEND FALLBACK - UPDATED FOR public FOLDER
-app.use(express.static(path.join(__dirname, 'public'))); 
-
-// This middleware captures all non-API GET requests and funnels them back to index.html safely
-app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 // 4. ADDITIONAL AI-POWERED CHAT ENDPOINT FOR FARMER INQUIRIES
 apiRouter.post('/chat', async (req, res) => {
     try {
@@ -131,7 +151,7 @@ apiRouter.post('/chat', async (req, res) => {
             CRITICAL DIRECTIVE: Answer the question clearly, concisely (max 3-4 sentences), and link it directly to their current weather values if relevant. Do not output markdown lists, titles, or JSON structures. Keep it looking like a natural text message conversation from a helpful human advisor.
         `;
 
-        const modelInstance = aiEngine.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const modelInstance = aiEngine.getGenerativeModel({ model: "gemini-1.5-flash" });
         const chatResult = await modelInstance.generateContent(chatPrompt);
         
         res.json({ reply: chatResult.response.text() });
@@ -141,25 +161,14 @@ apiRouter.post('/chat', async (req, res) => {
     }
 });
 
-// 5. AUTHENTICATION ROUTES WITH MYSQL BACKEND
-const mysql = require('mysql2/promise'); // Using promise wrapper for async/await
-const bcrypt = require('bcryptjs');// For secure password hashing
-const jwt = require('jsonwebtoken');// For token-based authentication
+app.use('/api/ai', apiRouter);
 
-const JWT_SECRET = process.env.JWT_SECRET || "agrometeo_super_secure_vector_key_2026";
+// ==========================================
+// 4. AUTHENTICATION SYSTEM (JWT + MySQL)
+// ==========================================
 
-// 1. INITIALIZE PRODUCTION-GRADE MYSQL CONNECTION POOL
-const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',      // Default WAMP username
-    password: '',      // Default WAMP password (leave empty string or change if set)
-    database: 'agrometeo_db',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+const authRouter = express.Router();
 
-// Create Users Table Structure Automatically inside MySQL on Startup
 async function initializeDatabaseSchema() {
     try {
         const connection = await pool.getConnection();
@@ -180,10 +189,6 @@ async function initializeDatabaseSchema() {
 }
 initializeDatabaseSchema();
 
-// 2. MOUNT AUTHENTICATION ROUTER
-const authRouter = express.Router(); // Fixed: Ensure authRouter is defined before use
-
-// REGISTRATION ENDPOINT (MySQL Variant)
 authRouter.post('/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -192,25 +197,20 @@ authRouter.post('/register', async (req, res) => {
             return res.status(400).json({ error: "All account fields are required." });
         }
 
-        // Hash password safely
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
-        
-        // Execute clean prepared statement syntax via our MySQL pool
         const [result] = await pool.execute(sql, [username, email, hashedPassword]);
         
         console.log(`👤 New Farmer Registered via MySQL! User ID: ${result.insertId}`);
         res.status(201).json({ message: "Farmer account compiled successfully! Proceed to Login." });
 
     } catch (error) {
-        // Catch duplicate entry constraints in MySQL (Error code: ER_DUP_ENTRY)
         if (error.code === 'ER_DUP_ENTRY' || error.message.includes("Duplicate entry")) {
             return res.status(400).json({ error: "Username or Email address is already registered." });
         }
-        console.error("❌ Registration Pipeline Error:", error);
-        res.status(500).json({ error: "Internal node directory configuration fault." });
+        res.status(500).json({ error: "Internal registration fault." });
     }
 });
 
@@ -226,19 +226,16 @@ authRouter.post('/login', async (req, res) => {
         const sql = `SELECT * FROM users WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);
         
-        // Check if user was discovered in rows array
         if (rows.length === 0) {
             return res.status(400).json({ error: "Invalid login credentials." });
         }
 
         const user = rows[0];
-
-        // Compare password input against hashed password in db
         const isMatch = await bcrypt.compare(password, user.password);
+        
         if (!isMatch) {
             return res.status(400).json({ error: "Invalid login credentials." });
         }
-
         // Generate dynamic secure JWT token session
         const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
 
@@ -255,7 +252,6 @@ authRouter.post('/login', async (req, res) => {
     }
 });
 
-// TOKEN VERIFICATION ENDPOINT
 authRouter.get('/verify', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -266,7 +262,6 @@ authRouter.get('/verify', async (req, res) => {
         
         const decoded = jwt.verify(token, JWT_SECRET);
         
-        // Check if user still exists in database
         const sql = `SELECT id, username, email FROM users WHERE id = ?`;
         const [rows] = await pool.execute(sql, [decoded.id]);
         
@@ -280,16 +275,24 @@ authRouter.get('/verify', async (req, res) => {
     }
 });
 
-// Bind auth routes to the main application middleware
 app.use('/api/auth', authRouter);
 
-// START SERVER PORT MONITORING
-const SERVER_PORT = process.env.PORT || 3200; // Fixed: Renamed to avoid conflict with previous PORT declaration
+// ==========================================
+// 5. STATIC ASSETS & SPA ROUTING
+// ==========================================
+
+app.use(express.static(path.join(__dirname, 'public'))); 
+
+app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ==========================================
+// 6. SERVER INITIALIZATION
+// ==========================================
+
 app.listen(SERVER_PORT, () => {
     console.log(`\n==================================================`);
     console.log(`🤖 AgriClimate Core Orchestrator Operational`);
-    console.log(`🔗 GET Test:  http://localhost:${SERVER_PORT}/api/ai/test`);
-    console.log(`🔗 POST Data: http://localhost:${SERVER_PORT}/api/ai/consult`);
-    console.log(`📁 Serving static files from: ${path.join(__dirname, 'public')}`);
     console.log(`==================================================\n`);
 });

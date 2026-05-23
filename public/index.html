@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!-- 
+    AgriClimate AI - Unified Command Center
+    Version: 1.0.0
+    Description: A high-performance dashboard for real-time agricultural telemetry and AI-driven crop advisory.
+    Author: Ogunjobi Temitope (AgroMeteo Solutions) - Hackathon 2026 Entry
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -20,10 +26,12 @@
 <body class="text-gray-100 min-h-screen flex selection:bg-emerald-500 selection:text-slate-950">
 
     <div id="app" v-cloak class="flex flex-1 w-full min-h-screen overflow-hidden">
-        
+
+        <!-- Sidebar Navigation: Desktop View -->
         <aside class="w-72 bg-[#090d1f]/90 border-r border-gray-800/80 flex flex-col justify-between p-6 shrink-0 hidden lg:flex">
             <div class="space-y-8">
-                <div class="flex items-center gap-3">
+                <!-- Brand Identity -->
+                <div class="flex items-center gap-3 mb-8">
                     <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                         <i class="fa-solid fa-leaf text-slate-950 font-bold"></i>
                     </div>
@@ -33,6 +41,7 @@
                     </div>
                 </div>
 
+                <!-- Navigation Links -->
                 <nav class="space-y-1.5">
                     <button 
                         @click="setActiveTab('weather')" 
@@ -61,7 +70,6 @@
                         <span>AI Crop Advisory</span>
                     </button>
 
-                    <!-- Disease Detection -->
                     <button 
                         @click="setActiveTab('disease')" 
                         :class="['nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', 
@@ -73,7 +81,9 @@
                 </nav>
             </div>
 
+            <!-- User Authentication Section -->
             <div class="pt-4 border-t border-gray-800/60">
+                <!-- Guest State -->
                 <button v-if="!isAuthenticated" @click="showAuthModal = true" class="w-full bg-[#0d1426] border border-gray-800 hover:border-emerald-500/30 rounded-xl p-3 flex items-center gap-3 transition group text-left">
                     <div class="w-7 h-7 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500 group-hover:text-emerald-400 transition">
                         <i class="fa-solid fa-lock text-xs"></i>
@@ -84,6 +94,7 @@
                     </div>
                 </button>
 
+                <!-- Authenticated State -->
                 <div v-else class="w-full bg-gradient-to-b from-[#0d1426] to-[#090d1f] border border-emerald-500/20 rounded-xl p-3.5 flex flex-col gap-3">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xs uppercase">
@@ -101,13 +112,14 @@
             </div>
         </aside>
 
+        <!-- Main Content Area -->
         <main class="flex-1 flex flex-col min-w-0 overflow-y-auto p-4 lg:p-8 space-y-6 relative">
             
+            <!-- Global Header & Location Controls -->
             <header class="flex flex-col gap-5 bg-[#0d1426]/40 border border-gray-800/60 rounded-2xl p-6 backdrop-blur-md">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <div class="flex items-center gap-3">
-                            <!--show only the status indicator as a simple dot or wifi icon-->
                             <div :class="['px-3 py-1 text-xs font-bold rounded-full mono-font transition-all', isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse']">
                                 <i :class="['fa-solid me-1.5', isOnline ? 'fa-circle-check' : 'fa-circle-xmark']"></i>
                                 {{ isOnline ? 'ONLINE' : 'OFFLINE' }}
@@ -135,6 +147,7 @@
                         </div>
                     </div>
 
+                    <!-- Location Mode Toggles -->
                     <div class="flex p-1 bg-[#060913] border border-gray-800 rounded-xl font-mono text-[10px]">
                         <button @click="locationMode = 'auto'" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase flex items-center gap-1.5', locationMode === 'auto' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400 hover:text-white']">
                             <i class="fa-solid fa-location-crosshairs"></i> Auto GPS
@@ -151,6 +164,7 @@
                 <div class="border-t border-gray-800/60 pt-4 flex flex-wrap items-center justify-between gap-4">
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                         
+                        <!-- Auto GPS Mode -->
                         <div v-if="locationMode === 'auto'" class="flex items-center gap-3">
                             <button @click="detectLiveLocation" class="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase px-4 py-2.5 rounded-xl transition flex items-center gap-2">
                                 <i class="fa-solid fa-location-arrow animate-pulse"></i> Scan Live Coordinates
@@ -160,6 +174,7 @@
                             </span>
                         </div>
 
+                        <!-- Manual Entry Mode -->
                         <div v-if="locationMode === 'manual'" class="flex flex-wrap items-center gap-2 font-mono">
                             <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-1">
                                 <span class="text-[10px] text-gray-500 uppercase me-2">Lat</span>
@@ -174,6 +189,7 @@
                             </button>
                         </div>
 
+                        <!-- Sector Group Mode -->
                         <div v-if="locationMode === 'sector'" class="flex items-center gap-3">
                             <select v-model="selectedLocationIndex" @change="handleSectorChange" class="bg-[#060913] text-xs font-mono text-white border border-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 transition">
                                 <option v-for="(loc, idx) in targetLocations" :key="idx" :value="idx">
@@ -182,6 +198,7 @@
                             </select>
                         </div>
 
+                        <!-- Active Matrix Display -->
                         <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-mono">
                             <span class="text-gray-500 me-2 uppercase">Active Matrix:</span>
                             <span class="text-emerald-400 font-bold">{{ activeLatLonString }}</span>
@@ -194,6 +211,7 @@
                 </div>
             </header>
 
+            <!-- Tab: Weather Engine -->
             <div v-show="activeTab === 'weather'" class="space-y-6">
                 <div v-if="loading" class="glass-card rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 border border-cyan-500/10">
                     <i class="fa-solid fa-satellite-dish text-4xl text-cyan-400 animate-bounce"></i>
@@ -206,6 +224,7 @@
                 </div>
 
                 <div v-else class="space-y-6">
+                    <!-- Current Metrics Grid -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-md">
                             <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
@@ -253,6 +272,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Historical & Forecast Chart -->
                         <div class="lg:col-span-8 glass-card rounded-2xl p-6 flex flex-col justify-between">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                                 <div>
@@ -268,6 +288,7 @@
                             </div>
                         </div>
 
+                        <!-- GIS Mapping Module -->
                         <div class="lg:col-span-4 glass-card rounded-2xl p-6 flex flex-col">
                             <div class="mb-4">
                                 <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
@@ -331,6 +352,7 @@
 
                     </div>
 
+                    <!-- 7-Day Forecast Grid -->
                     <div class="space-y-2">
                         <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 font-mono">Extended Forecast Array Grid</h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -345,6 +367,7 @@
                 </div>
             </div>
 
+            <!-- Tab: Alert System -->
             <div v-show="activeTab === 'alerts'" class="space-y-4 font-mono">
     
                 <div class="flex items-center justify-between border-b border-gray-800 pb-3">
@@ -390,7 +413,7 @@
 
             </div>
 
-            <!-- AI Crop Advisory Tab -->
+            <!-- Tab: AI Crop Advisory -->
             <div v-show="activeTab === 'reports'" class="space-y-6">
                 <div class="glass-card rounded-2xl p-6 border border-gray-800">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -427,6 +450,7 @@
 
                 <div v-if="aiReport && !generatingReport" class="space-y-6 transition-all duration-500 transform translate-y-0 opacity-100 font-mono">
     
+                    <!-- Risk Status Banner -->
                     <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl', 
                         aiReport.overallRisk === 'HIGH' || aiReport.overallRisk === 'CRITICAL' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200']">
                         <div>
@@ -444,6 +468,7 @@
                         </div>
                     </div>
 
+                    <!-- Key Performance Indicators -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
                             <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Planting Status</div>
@@ -472,8 +497,10 @@
                         </div>
                     </div>
 
+                    <!-- Action Protocols -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
+                        <!-- DOs -->
                         <div class="bg-[#071311] border border-emerald-500/20 rounded-2xl p-5 shadow-xl space-y-4">
                             <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest border-b border-emerald-500/10 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-circle-check"></i> Recommended Field Actions (DO)
@@ -486,6 +513,7 @@
                             </div>
                         </div>
 
+                        <!-- DONTs -->
                         <div class="bg-[#140b0f] border border-red-500/20 rounded-2xl p-5 shadow-xl space-y-4">
                             <div class="text-xs font-bold text-red-400 uppercase tracking-widest border-b border-red-500/10 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-circle-xmark"></i> Critical Restrictions (DON'T)
@@ -500,6 +528,7 @@
 
                     </div>
 
+                    <!-- AI Tip -->
                     <div class="bg-gradient-to-r from-cyan-950/20 to-emerald-950/20 border border-gray-800 rounded-xl p-4 flex items-start gap-3 shadow-md">
                         <i class="fa-solid fa-lightbulb text-cyan-400 text-sm mt-0.5 shrink-0"></i>
                         <div>
@@ -511,7 +540,7 @@
                 </div>
             </div>
 
-            <!--Disease Detection Tab-->
+            <!-- Tab: Disease Detection -->
             <div v-show="activeTab === 'diseases'" class="space-y-6">
                 <div class="glass-card rounded-2xl p-6 border border-gray-800">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -546,6 +575,7 @@
                 </div>
 
                 <div v-if="diseaseReport && !generatingReport" class="space-y-6 transition-all duration-500 transform translate-y-0 opacity-100 font-mono">
+                    <!-- Health Summary -->
                     <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl', 
                         diseaseReport.overallHealth === 'CRITICAL' || diseaseReport.overallHealth === 'POOR' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200']">
                         <div>
@@ -559,6 +589,7 @@
                         </div>
                     </div>
 
+                    <!-- Disease Metrics -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
                             <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Disease Presence</div>
@@ -652,7 +683,7 @@
         </div>
         
 
-        <!--footer display on mobile devices-->
+        <!-- Mobile Navigation Footer -->
 <footer class="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-2 flex items-center justify-around shadow-2xl mobile-footer">
     <button 
         @click="setActiveTab('weather')" 
@@ -685,10 +716,10 @@
 </footer>
 
 </div><!-- End of #app -->
-
-
-
+    
+    <!-- Core Scripts -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
+<!-- End of Document -->
