@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriClimate AI - Weather & Climate Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #060913;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Premium Glassmorphism styling matching dashboard standards */
+        .glass-card {
+            background: rgba(13, 20, 38, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #060913;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+
+    <div id="app" class="flex-1 flex flex-col p-4 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+        
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0d1426]/40 border border-gray-800/60 rounded-2xl p-6 backdrop-blur-md">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <h1 class="text-xl font-extrabold tracking-tight uppercase font-mono bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                        WEATHER & CLIMATE ENGINE
+                    </h1>
+                </div>
+                <p class="text-xs text-gray-400 mt-1 uppercase font-mono tracking-wider">
+                    Core Telemetry Node // Open-Meteo Sat-Link Matrix
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono">
+                    <span class="text-gray-500 me-2 uppercase">Lat/Lon:</span>
+                    <span class="text-cyan-400 font-bold">{{ selectedCoordinates.lat }}, {{ selectedCoordinates.lon }}</span>
+                </div>
+                <select v-model="selectedLocationIndex" @change="handleLocationChange" class="bg-[#060913] text-xs font-mono text-white border border-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 transition">
+                    <option v-for="(loc, idx) in targetLocations" :key="idx" :value="idx">
+                        {{ loc.name }} ({{ loc.cropFocus }})
+                    </option>
+                </select>
+                <button @click="refreshTelemetry" :disabled="loading" class="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:from-gray-800 disabled:to-gray-800 text-slate-950 disabled:text-gray-500 font-extrabold font-mono text-xs uppercase px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+                    <i :class="['fa-solid fa-arrows-rotate', {'animate-spin': loading}]"></i> Sync Telemetry
+                </button>
+            </div>
+        </header>
+
+        <div v-if="loading" class="glass-card rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 border border-cyan-500/10">
+            <i class="fa-solid fa-satellite-dish text-4xl text-cyan-400 animate-bounce"></i>
+            <div class="space-y-1">
+                <p class="text-sm font-bold font-mono tracking-wider uppercase text-white">Establishing Open-Meteo Satellite Sync...</p>
+                <p class="text-xs text-gray-500 font-mono">Pinging global climate arrays & fetching atmospheric vectors...</p>
+            </div>
+        </div>
+
+        <div v-else-if="error" class="glass-card rounded-2xl p-8 text-center border border-red-500/20 text-red-400 space-y-2">
+            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            <p class="text-sm font-mono font-bold uppercase">Data Link Fault Encountered</p>
+            <p class="text-xs text-gray-400">{{ error }}</p>
+        </div>
+
+        <div v-else class="space-y-6">
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-md">
+                    <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                        <span>Canopy Thermal Value</span>
+                        <i class="fa-solid fa-temperature-half text-emerald-400 text-sm"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-1">
+                        <span class="text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.temperature_2m }}</span>
+                        <span class="text-xs text-emerald-400 font-bold font-mono">°C</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2 font-mono uppercase">Realtime Surface Temp</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 border-l-4 border-cyan-500 shadow-md">
+                    <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                        <span>Vapor Pressure Ratio</span>
+                        <i class="fa-solid fa-droplet text-cyan-400 text-sm"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-1">
+                        <span class="text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.relative_humidity_2m }}</span>
+                        <span class="text-xs text-cyan-400 font-bold font-mono">%</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2 font-mono uppercase">Relative Ambient Humidity</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 border-l-4 border-blue-500 shadow-md">
+                    <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                        <span>Instant Precipitation</span>
+                        <i class="fa-solid fa-cloud-showers-heavy text-blue-400 text-sm"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-1">
+                        <span class="text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.precipitation }}</span>
+                        <span class="text-xs text-blue-400 font-bold font-mono">mm</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2 font-mono uppercase">Current Rain Detection Gauge</p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 border-l-4 border-amber-500 shadow-md">
+                    <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                        <span>Wind Kinetic Velocity</span>
+                        <i class="fa-solid fa-wind text-amber-400 text-sm"></i>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-1">
+                        <span class="text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.wind_speed_10m }}</span>
+                        <span class="text-xs text-amber-400 font-bold font-mono">km/h</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2 font-mono uppercase">Velocity At 10 Meter Altitude</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="lg:col-span-8 glass-card rounded-2xl p-6 flex flex-col justify-between">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
+                                <i class="fa-solid fa-chart-line text-emerald-400 me-2"></i> Meteorological Projection Module
+                            </h3>
+                            <p class="text-[10px] text-gray-500 font-mono mt-0.5">Dual Axis Forecast and Rainfall Projections</p>
+                        </div>
+                        
+                        <div class="flex gap-1.5 p-1 bg-[#060913] border border-gray-800 rounded-xl font-mono text-[10px]">
+                            <button @click="switchEngineView('7day')" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase', activeView === '7day' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white']">
+                                7-Day Forecast
+                            </button>
+                            <button @click="switchEngineView('seasonal')" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase', activeView === 'seasonal' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 shadow' : 'text-gray-400 hover:text-white']">
+                                Seasonal Trend
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="h-[320px] w-full text-slate-950">
+                        <div id="engine-macro-chart" class="w-full h-full"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 glass-card rounded-2xl p-6 flex flex-col">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
+                            <i class="fa-solid fa-border-top-left text-cyan-400 me-2"></i> Sector Thermal Heatmap
+                        </h3>
+                        <p class="text-[10px] text-gray-500 font-mono mt-0.5">Microclimate variance indices across sub-plots</p>
+                    </div>
+
+                    <div class="flex-1 grid grid-cols-4 gap-2 bg-[#060913]/60 p-3 border border-gray-800 rounded-xl font-mono">
+                        <div v-for="(temp, idx) in simulatedHeatmapCells" :key="idx" 
+                             :style="{ backgroundColor: getHeatmapColorScale(temp) }" 
+                             class="rounded-lg flex flex-col items-center justify-center p-2 border border-white/5 transition hover:scale-105 cursor-help group relative">
+                            <span class="text-[9px] font-bold text-slate-950">P-{{ idx + 1 }}</span>
+                            <span class="text-[11px] font-extrabold text-slate-950 mt-0.5">{{ temp }}°</span>
+                            
+                            <div class="absolute bottom-full mb-2 hidden group-hover:block bg-slate-900 border border-gray-800 text-white text-[9px] rounded px-2 py-1 whitespace-nowrap z-20">
+                                Canopy Core Temp Variance: {{ (temp - weatherData.current.temperature_2m).toFixed(1) }}°C from station mean.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between text-[9px] text-gray-500 font-mono uppercase">
+                        <span>Low Core Stress (Cool)</span>
+                        <div class="h-2 flex-1 mx-3 rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-red-500"></div>
+                        <span>High Stress (Hot)</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 font-mono">Extended Forecast Array Grid</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <div v-for="(day, index) in weatherData.daily.time" :key="index" class="glass-card rounded-xl p-3 text-center border border-gray-800/80 hover:border-emerald-500/20 transition">
+                        <p class="text-[10px] font-mono text-gray-400 uppercase font-bold">{{ formatDayName(day) }}</p>
+                        <p class="text-[9px] font-mono text-gray-600 mb-2">{{ formatShortDate(day) }}</p>
+                        <i :class="['fa-solid text-base my-2 block', getForecastIconClass(weatherData.daily.precipitation_sum[index])]"></i>
+                        <div class="text-xs font-bold font-mono mt-1 text-white">
+                            {{ Math.round(weatherData.daily.temperature_2m_max[index]) }}° / <span class="text-gray-500">{{ Math.round(weatherData.daily.temperature_2m_min[index]) }}°</span>
+                        </div>
+                        <div class="text-[9px] text-cyan-400 font-mono font-bold mt-1.5 flex items-center justify-center gap-0.5">
+                            <i class="fa-solid fa-cloud-rain text-[8px]"></i> {{ weatherData.daily.precipitation_sum[index].toFixed(1) }}mm
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        createApp({
+            setup() {
+                // Predefined operational target agroclimatic points
+                const targetLocations = ref([
+                    { name: 'Oyo Sector Zone Alpha', lat: 7.3775, lon: 3.9470, cropFocus: 'Maize Seeding Matrix' },
+                    { name: 'Kaduna Sector Zone Beta', lat: 10.5105, lon: 7.4168, cropFocus: 'Cereal Grain Hub' },
+                    { name: 'Benue Crop Valley Perimeter', lat: 7.7337, lon: 8.5214, cropFocus: 'Root Crop System' }
+                ]);
+
+                const selectedLocationIndex = ref(0);
+                const activeView = ref('7day'); // Toggles database metrics between '7day' and 'seasonal'
+                const weatherData = ref(null);
+                const loading = ref(true);
+                const error = ref(null);
+                const simulatedHeatmapCells = ref([]);
+                
+                let chartInstance = null;
+
+                // Reactive computational pointer tracking active coordinate target vectors
+                const selectedCoordinates = computed(() => {
+                    const loc = targetLocations.value[selectedLocationIndex.value];
+                    return { lat: loc.lat, lon: loc.lon };
+                });
+
+                // Core Engine data fetch calling Open-Meteo REST API endpoint arrays
+                const fetchOpenMeteoTelemetry = async () => {
+                    loading.value = true;
+                    error.value = null;
+                    try {
+                        const { lat, lon } = selectedCoordinates.value;
+                        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
+                        
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error("Telemetry broadcast connection link dropped by host.");
+                        
+                        const data = await response.json();
+                        weatherData.value = data;
+                        
+                        // Populate microclimatic spatial heatmap indexes derived from current base station calculations
+                        generateSimulatedHeatmap(data.current.temperature_2m);
+                        
+                        // Allow Vue to paint layout context elements then fire chart rendering processes
+                        setTimeout(() => {
+                            renderEngineAnalyticsPlot();
+                        }, 50);
+
+                    } catch (err) {
+                        error.value = err.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                // Formulate grid values for the thermal matrix view panel
+                const generateSimulatedHeatmap = (baseTemp) => {
+                    const cells = [];
+                    for(let i = 0; i < 16; i++) {
+                        // Injects slight fractional ambient spatial temperature delta anomalies across sections
+                        const variation = (Math.sin(i * 1.7) * 2.1) + (Math.cos(i * 0.9) * 1.4);
+                        cells.push(parseFloat((baseTemp + variation).toFixed(1)));
+                    }
+                    simulatedHeatmapCells.value = cells;
+                };
+
+                // Dynamic background color mapping calculation matrix
+                const getHeatmapColorScale = (temp) => {
+                    if (!weatherData.value) return 'rgba(16, 185, 129, 0.5)';
+                    const base = weatherData.value.current.temperature_2m;
+                    const delta = temp - base;
+                    
+                    if (delta < -1.5) return 'rgba(96, 165, 250, 0.8)';   // Cooling canopy variance node
+                    if (delta >= -1.5 && delta <= 1.5) return 'rgba(52, 211, 153, 0.8)'; // Optimal variance balance
+                    if (delta > 1.5 && delta <= 3.0) return 'rgba(251, 191, 36, 0.8)';   // Mild heat accumulation stress
+                    return 'rgba(239, 68, 68, 0.8)'; // Extreme microclimate heat saturation threshold
+                };
+
+                // Multi-Axis ApexCharts execution logic processing weather projections
+                const renderEngineAnalyticsPlot = () => {
+                    const chartDom = document.querySelector("#engine-macro-chart");
+                    if (!chartDom || !weatherData.value) return;
+
+                    let seriesData = [];
+                    let categoriesData = [];
+                    let yAxisConfig = [];
+
+                    if (activeView.value === '7day') {
+                        // Extract daily arrays from historical Open-Meteo payload nodes
+                        categoriesData = weatherData.value.daily.time.map(t => formatDayName(t));
+                        seriesData = [
+                            {
+                                name: 'Rainfall Projection (mm)',
+                                type: 'column',
+                                data: weatherData.value.daily.precipitation_sum
+                            },
+                            {
+                                name: 'Max Canopy Temp (°C)',
+                                type: 'line',
+                                data: weatherData.value.daily.temperature_2m_max
+                            }
+                        ];
+                    } else {
+                        // Macro Seasonal Trend Analysis Dataset simulation parameters
+                        categoriesData = ['Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26'];
+                        seriesData = [
+                            {
+                                name: 'Projected Rainfall Normal (mm)',
+                                type: 'column',
+                                data: [110, 145, 180, 130, 95, 40, 12]
+                            },
+                            {
+                                name: 'Macro Seasonal Temperature Median (°C)',
+                                type: 'line',
+                                data: [29.5, 28.1, 27.4, 28.9, 30.2, 31.8, 33.1]
+                            }
+                        ];
+                    }
+
+                    const options = {
+                        series: seriesData,
+                        chart: {
+                            height: '100%',
+                            type: 'line',
+                            toolbar: { show: false },
+                            background: 'transparent',
+                            fontFamily: 'Plus Jakarta Sans, sans-serif'
+                        },
+                        colors: ['#0284c7', '#10b981'],
+                        stroke: { width: [0, 3], curve: 'smooth' },
+                        theme: { mode: 'dark' },
+                        grid: { borderColor: '#1f293d', strokeDashArray: 4 },
+                        xaxis: {
+                            categories: categoriesData,
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'JetBrains Mono' } },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: [
+                            {
+                                title: { text: 'Precipitation Volume (mm)', style: { color: '#0284c7', fontWeight: 700 } },
+                                labels: { style: { colors: '#0284c7', fontFamily: 'JetBrains Mono' } }
+                            },
+                            {
+                                opposite: true,
+                                title: { text: 'Thermal Vector Scale (°C)', style: { color: '#10b981', fontWeight: 700 } },
+                                labels: { style: { colors: '#10b981', fontFamily: 'JetBrains Mono' } }
+                            }
+                        ],
+                        legend: { position: 'top', horizontalAlign: 'right', fontFamily: 'JetBrains Mono', fontSize: '11px' },
+                        dataLabels: { enabled: false },
+                        tooltip: { theme: 'dark' }
+                    };
+
+                    if (chartInstance) chartInstance.destroy();
+                    chartInstance = new ApexCharts(chartDom, options);
+                    chartInstance.render();
+                };
+
+                const switchEngineView = (viewType) => {
+                    activeView.value = viewType;
+                    renderEngineAnalyticsPlot();
+                };
+
+                const handleLocationChange = () => {
+                    fetchOpenMeteoTelemetry();
+                };
+
+                const refreshTelemetry = () => {
+                    fetchOpenMeteoTelemetry();
+                };
+
+                // Helper Utilities parsing datetime structural formats
+                const formatDayName = (dateStr) => {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { weekday: 'short' });
+                };
+
+                const formatShortDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                };
+
+                const getForecastIconClass = (rainVolume) => {
+                    if (rainVolume === 0) return 'fa-sun text-amber-400';
+                    if (rainVolume > 0 && rainVolume <= 4) return 'fa-cloud-sun text-emerald-400';
+                    return 'fa-cloud-showers-heavy text-blue-400';
+                };
+
+                onMounted(() => {
+                    fetchOpenMeteoTelemetry();
+                });
+
+                return {
+                    targetLocations,
+                    selectedLocationIndex,
+                    selectedCoordinates,
+                    activeView,
+                    weatherData,
+                    loading,
+                    error,
+                    simulatedHeatmapCells,
+                    switchEngineView,
+                    handleLocationChange,
+                    refreshTelemetry,
+                    formatDayName,
+                    formatShortDate,
+                    getForecastIconClass,
+                    getHeatmapColorScale
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

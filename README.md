@@ -28,3 +28,15 @@ Agriculture remains one of the most climate-sensitive sectors in the world, espe
        │ (2) Fetches Data│ (3) Pipes Context + Sensor Metrics
        ▼                 ▼
 [Open-Meteo API] 🌦️    [Google Gemini API (gemini-2.5-flash)] 🧠
+
+```text
+[ USER BROWSER UI ] ◄───(Reactive Data Bindings)───► [ VUE.JS CORE ENGINE ]
+          │                                                    │
+   (Geolocation API)                                    (Axios Engine)
+          ▼                                                    ▼
+   [ Auto GPS Engine ]                                  [ NODE.JS BACKEND ]
+                                                               │
+                                         ┌─────────────────────┴─────────────────────┐
+                                         ▼                                           ▼
+                                [ OPEN-METEO ENGINE ]                      [ GOOGLE GEMINI API ]
+                             (Precision Sub-Surface Metrics)                (Structured JSON Schema)

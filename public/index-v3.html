@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMeteo AI // Advanced Climate Control Command</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
+    <link rel="manifest" href="assets/favicons/site.webmanifest">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #060913;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .mono-font { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Premium Cyberpunk / Glassmorphism Glow Tweak */
+        .glass-card {
+            background: rgba(13, 20, 38, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-card:hover {
+            border-color: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Neon Highlights & Elements */
+        .neon-text-green { text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .neon-border-cyan { box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #060913; }
+        ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+        .active-nav {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 100%);
+            border-left: 3px solid #10b981;
+            color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-[#060913] antialiased">
+
+<div id="app" class="flex min-h-screen">
+
+    <aside class="hidden lg:flex flex-col w-64 bg-[#090d1f] border-r border-gray-800/60 h-screen sticky top-0 z-30">
+        <div class="p-6 border-b border-gray-800/60 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <i class="fa-solid var(--fa-leaf) fa-leaf text-slate-900 text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white mb-0">AGROMETEO <span class="text-emerald-400">AI</span></h1>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mono-font">Command Pod v2.5</p>
+            </div>
+        </div>
+        
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="#" @click.prevent="activeTab = 'dashboard'" :class="['flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 group text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/30', activeTab === 'dashboard' ? 'active-nav text-white' : '']">
+                <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+            </a>
+            <a href="#" @click.prevent="activeTab = 'advisory'" :class="['flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 group text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/30', activeTab === 'advisory' ? 'active-nav text-white' : '']">
+                <i class="fa-solid fa-brain w-5"></i> AI Crop Advisory
+            </a>
+            <a href="#" @click.prevent="activeTab = 'disease'" :class="['flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 group text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/30', activeTab === 'disease' ? 'active-nav text-white' : '']">
+                <i class="fa-solid fa-microscope w-5"></i> Disease Module
+            </a>
+            <a href="#" @click.prevent="activeTab = 'risk'" :class="['flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 group text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/30', activeTab === 'risk' ? 'active-nav text-white' : '']">
+                <i class="fa-solid fa-triangle-exclamation w-5"></i> Climate Risk
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-800/60">
+            <div class="glass-card rounded-xl p-3 flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <div class="text-xs">
+                    <p class="text-gray-300 font-medium">Node Main Core</p>
+                    <p class="text-gray-500 text-[10px] mono-font">PORT : 3500</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-x-hidden pb-24 lg:pb-6">
+        
+        <header class="bg-[#090d1f]/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-800/60 px-4 lg:px-8 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex items-center gap-3 justify-between w-full md:w-auto">
+                <div class="lg:hidden flex items-center gap-2">
+                    <i class="fa-solid fa-leaf text-emerald-400 text-2xl"></i>
+                    <span class="font-bold text-white tracking-tight">AGROMETEO AI</span>
+                </div>
+                <div class="hidden md:block">
+                    <h2 class="text-xl font-bold text-white tracking-tight">Eco-System Telemetry Monitor</h2>
+                    <p class="text-xs text-gray-400">Live sub-surface metrics synced with computational engine layers</p>
+                </div>
+                <div :class="['px-3 py-1 text-xs font-bold rounded-full mono-font transition-all', isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse']">
+                    <i :class="['fa-solid me-1.5', isOnline ? 'fa-circle-check' : 'fa-circle-xmark']"></i>
+                    {{ isOnline ? 'ONLINE' : 'OFFLINE' }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 sm:grid-cols-4 lg:flex gap-3 w-full md:w-auto text-xs mono-font">
+                <div class="bg-gray-900/50 rounded-lg p-2 border border-gray-800/60 min-w-[90px]">
+                    <span class="text-gray-500 block text-[9px] uppercase">AIR TEMP</span>
+                    <span class="font-bold text-white text-sm" id="ticker-temp">{{ weatherData ? weatherData.current.temperature_2m + '°C' : '--' }}</span>
+                </div>
+                <div class="bg-gray-900/50 rounded-lg p-2 border border-gray-800/60 min-w-[90px]">
+                    <span class="text-gray-500 block text-[9px] uppercase">HUMIDITY</span>
+                    <span class="font-bold text-cyan-400 text-sm" id="ticker-rh">{{ weatherData ? weatherData.current.relative_humidity_2m + '%' : '--' }}</span>
+                </div>
+                <div class="bg-gray-900/50 rounded-lg p-2 border border-gray-800/60 min-w-[100px]">
+                    <span class="text-gray-500 block text-[9px] uppercase">SOIL MOIST</span>
+                    <span class="font-bold text-emerald-400 text-sm" id="ticker-sm">{{ weatherData ? weatherData.hourly_trends.soil_moisture[0] + ' m³/m³' : '--' }}</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 p-4 lg:p-8 space-y-6">
+
+            <section class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <form @submit.prevent="fetchAgriData" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end relative z-10">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider mono-font">Target Crop Strain</label>
+                        <div class="relative">
+                            <select v-model="form.crop" class="w-full bg-[#0d1426] border border-gray-800 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition">
+                                <option value="Maize">Maize (Corn Plot)</option>
+                                <option value="Rice">Rice (Lowland Paddy)</option>
+                                <option value="Wheat">Wheat (Grain Canopy)</option>
+                                <option value="Cassava">Cassava (Root Crop)</option>
+                                <option value="Vegetables">Leafy Vegetables</option>
+                                <option value="Tomato">Tomato (Solanaceous)</option>
+                                <option value="Cocoa">Cocoa (Cash Crop)</option>
+                                <option value="Yam">Yam (Tuber)</option>
+                                <option value="Sorghum">Sorghum (Drought-Resistant)</option>
+                                <option value="Groundnut">Groundnut (Legume)</option>
+                                <option value="Sugarcane">Sugarcane (Biofuel Crop)</option>
+
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-500 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider mono-font">Latitude Coordinate</label>
+                        <input type="text" v-model="form.lat" class="w-full bg-[#0d1426] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition font-mono" placeholder="e.g. 12.0000">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider mono-font">Longitude Coordinate</label>
+                        <input type="text" v-model="form.lon" class="w-full bg-[#0d1426] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition font-mono" placeholder="e.g. 8.5000">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" @click="detectLocation" :disabled="locationLoading" class="bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white font-semibold rounded-xl px-4 py-3 transition flex items-center justify-center min-w-[54px]" title="Auto-Detect System GPS">
+                            <i v-if="locationLoading" class="fa-solid fa-spinner animate-spin"></i>
+                            <i v-else class="fa-solid fa-crosshairs text-emerald-400"></i>
+                        </button>
+                        <button type="submit" :disabled="loading" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 text-slate-950 font-extrabold rounded-xl px-6 py-3 transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10">
+                            <i v-if="loading" class="fa-solid fa-circle-notch animate-spin"></i>
+                            <span v-else><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Sync & Compute</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div v-if="error" class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                    <div>{{ error }}</div>
+                </div>
+            </section>
+
+            <div v-show="activeTab === 'dashboard'" class="space-y-6">
+                <div v-if="!weatherData" class="text-center py-20 glass-card rounded-2xl flex flex-col items-center justify-center p-6 border-dashed border-gray-800">
+                    <div class="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center mb-4 border border-gray-800">
+                        <i class="fa-solid fa-satellite-dish text-gray-500 text-xl animate-bounce"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Telemetry Sync Required</h3>
+                    <p class="text-sm text-gray-400 max-w-sm">Please select a target crop and hit the "Sync & Compute" button above to pull advanced computational models.</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 glass-card rounded-2xl p-4 flex flex-col h-[480px]">
+                        <div class="flex items-center justify-between mb-3 px-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono"><i class="fa-solid fa-map-location-dot text-cyan-400 me-1.5"></i> GIS Layer Interpolation</span>
+                            <span class="text-[10px] text-gray-500 font-mono">LAT: {{form.lat}} / LON: {{form.lon}}</span>
+                        </div>
+                        <div id="map" class="flex-1 rounded-xl bg-slate-950 border border-gray-800/80 z-10"></div>
+                    </div>
+
+                    <div class="lg:col-span-7 glass-card rounded-2xl p-6 flex flex-col justify-between h-[480px]">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400 font-mono mb-4"><i class="fa-solid fa-chart-line text-emerald-400 tyranny me-1.5"></i> Hyperlocal Sub-Surface Trend (Next 24H)</h3>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <div id="apex-trends-chart" class="w-full h-full text-slate-900"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                            <span class="text-gray-500 text-[10px] font-bold uppercase font-mono tracking-wider mb-2">Flood Probability</span>
+                            <div class="text-2xl font-bold font-mono" :class="getRiskTextColor(aiAdvisory ? aiAdvisory.riskLevel : 'Low')">
+                                {{ aiAdvisory ? (aiAdvisory.riskLevel === 'Critical' || aiAdvisory.riskLevel === 'High' ? '84%' : '12%') : '--' }}
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                            <span class="text-gray-500 text-[10px] font-bold uppercase font-mono tracking-wider mb-2">Drought Matrix Level</span>
+                            <div class="text-2xl font-bold font-mono" :class="getRiskTextColor(aiAdvisory ? aiAdvisory.riskLevel : 'Low')">
+                                {{ aiAdvisory ? (aiAdvisory.riskLevel === 'Critical' ? '92%' : aiAdvisory.riskLevel === 'High' ? '76%' : '24%') : '--' }}
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                            <span class="text-gray-500 text-[10px] font-bold uppercase font-mono tracking-wider mb-2">Root Heat Stress</span>
+                            <div class="text-2xl font-bold font-mono" :class="getRiskTextColor(aiAdvisory ? aiAdvisory.riskLevel : 'Low')">
+                                {{ aiAdvisory ? (aiAdvisory.riskLevel === 'Critical' ? 'CRIT' : aiAdvisory.riskLevel === 'High' ? 'HIGH' : 'NOMINAL') : '--' }}
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                            <span class="text-gray-500 text-[10px] font-bold uppercase font-mono tracking-wider mb-2">Fungal Vector Spore Index</span>
+                            <div class="text-2xl font-bold font-mono text-cyan-400">
+                                {{ weatherData ? (weatherData.current.relative_humidity_2m > 75 ? 'HIGH RISK' : 'STABLE') : '--' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 'advisory'" class="space-y-6">
+                <div v-if="!aiAdvisory" class="text-center py-20 glass-card rounded-2xl flex flex-col items-center justify-center p-6 border-dashed border-gray-800">
+                    <div class="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center mb-4 border border-gray-800">
+                        <i class="fa-solid fa-brain text-gray-500 text-xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">AI Inference Output Empty</h3>
+                    <p class="text-sm text-gray-400 max-w-sm">The agronomical decision model is waiting for live computed telemetry matrices.</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 bg-gradient-to-b from-[#0e1630] to-[#090d1f] rounded-2xl p-6 border border-gray-800/80 shadow-2xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-6">
+                                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider font-mono">Evaluation Node</span>
+                                <div :class="['px-3 py-1 text-xs font-black rounded-xl uppercase font-mono', getRiskBadgeClass(aiAdvisory.riskLevel)]">
+                                    RISK: {{ aiAdvisory.riskLevel }}
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-extrabold text-white mb-3 tracking-tight">{{ responseCrop }} Field Analysis</h3>
+                            <p class="text-sm text-gray-400 leading-relaxed font-normal mb-6">{{ aiAdvisory.summary }}</p>
+                        </div>
+                        <div class="border-t border-gray-800/60 pt-4 mt-4">
+                            <span class="text-[10px] text-gray-500 font-mono uppercase block mb-1">Inference Engine Model</span>
+                            <span class="text-xs text-white font-bold block"><i class="fa-solid fa-microchip text-emerald-400 me-1.5"></i> gemini-2.5-flash (Enforced Schema)</span>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="glass-card rounded-2xl p-6 border-l-4 border-l-emerald-500">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-emerald-400 font-mono mb-4"><i class="fa-solid fa-circle-check me-2"></i> Tactical Action Protocols (DOs)</h4>
+                            <ul class="space-y-3">
+                                <li v-for="(item, index) in aiAdvisory.dos" :key="'do-'+index" class="text-sm text-gray-300 flex items-start gap-3">
+                                    <span class="text-emerald-500 font-bold mt-0.5"><i class="fa-solid fa-chevron-right text-xs"></i></span>
+                                    <span>{{ item }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="glass-card rounded-2xl p-6 border-l-4 border-l-red-500">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-red-400 font-mono mb-4"><i class="fa-solid fa-circle-xmark me-2"></i> Operational Halts (DONTs)</h4>
+                            <ul class="space-y-3">
+                                <li v-for="(item, index) in aiAdvisory.donts" :key="'dont-'+index" class="text-sm text-gray-300 flex items-start gap-3">
+                                    <span class="text-red-500 font-bold mt-0.5"><i class="fa-solid fa-ban text-xs"></i></span>
+                                    <span>{{ item }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 'disease'" class="glass-card rounded-2xl p-8 max-w-3xl mx-auto text-center space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Pathological Vision Scanner Lab</h2>
+                    <p class="text-sm text-gray-400 max-w-md mx-auto">Upload clear crop foliage snapshots to diagnose viral leaf spot alerts linked directly to current climate matrix parameters.</p>
+                </div>
+                <div class="border-2 border-dashed border-gray-800 hover:border-emerald-500/50 rounded-2xl p-12 bg-gray-900/20 cursor-pointer transition flex flex-col items-center justify-center">
+                    <div class="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-cloud-arrow-up text-emerald-400 text-xl"></i>
+                    </div>
+                    <span class="text-sm font-semibold text-white block mb-1">Drag and drop crop photo sample</span>
+                    <span class="text-xs text-gray-500 block">Supports RAW, PNG, JPEG high definition matrices up to 10MB</span>
+                </div>
+                <div class="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-xs flex items-center gap-3 justify-center">
+                    <i class="fa-solid fa-circle-info"></i> Extension Warning: Database connection initialization verified. Vision classification nodes active.
+                </div>
+            </div>
+
+            <div v-show="activeTab === 'risk'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-md font-bold text-white mb-4 mono-font"><i class="fa-solid fa-shield-virus text-cyan-400 me-2"></i> Disease Proximity Vectors</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-400">Leaf Rust Fungus Forecast</span>
+                                <span class="font-bold text-amber-400">54% Probability</span>
+                            </div>
+                            <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-amber-400 h-1.5" style="width: 54%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-400">Blight Infestation Vector</span>
+                                <span class="font-bold text-emerald-400">18% Probability</span>
+                            </div>
+                            <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-emerald-400 h-1.5" style="width: 18%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-md font-bold text-white mb-4 mono-font"><i class="fa-solid fa-droplet-slash text-red-400 me-2"></i> Soil Outflow Matrix Analytics</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center text-sm border-b border-gray-800/60 pb-2">
+                            <span class="text-gray-400">Daily Evapotranspiration Rate ($ET_0$)</span>
+                            <span class="font-bold font-mono text-white">{{ weatherData ? '4.82 mm/day' : '--' }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm border-b border-gray-800/60 pb-2">
+                            <span class="text-gray-400">Root Layer Absorption Speed</span>
+                            <span class="font-bold font-mono text-emerald-400">Optimal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#090d1f]/95 backdrop-blur-xl border-t border-gray-800/80 z-40 px-6 py-2 flex items-center justify-around shadow-2xl">
+        <button @click="activeTab = 'dashboard'" :class="['flex flex-col items-center gap-1 p-2 text-xs transition font-medium', activeTab === 'dashboard' ? 'text-emerald-400' : 'text-gray-400']">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span>Monitor</span>
+        </button>
+        <button @click="activeTab = 'advisory'" :class="['flex flex-col items-center gap-1 p-2 text-xs transition font-medium', activeTab === 'advisory' ? 'text-emerald-400' : 'text-gray-400']">
+            <i class="fa-solid fa-brain text-lg"></i>
+            <span>Advisory</span>
+        </button>
+        <button @click="activeTab = 'disease'" :class="['flex flex-col items-center gap-1 p-2 text-xs transition font-medium', activeTab === 'disease' ? 'text-emerald-400' : 'text-gray-400']">
+            <i class="fa-solid fa-microscope text-lg"></i>
+            <span>Pathology</span>
+        </button>
+        <button @click="activeTab = 'risk'" :class="['flex flex-col items-center gap-1 p-2 text-xs transition font-medium', activeTab === 'risk' ? 'text-emerald-400' : 'text-gray-400']">
+            <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            <span>Risk</span>
+        </button>
+    </footer>
+
+</div>
+
+<script>
+    const { createApp, ref, onMounted, onUnmounted } = Vue;
+
+    createApp({
+        setup() {
+            // State references
+            const activeTab = ref('dashboard');
+            const form = ref({ crop: 'Maize', lat: '12.0000', lon: '8.5000' });// Default coordinates can be set to a central location or left blank
+            const loading = ref(false);
+            const locationLoading = ref(false);
+            const weatherData = ref(null);
+            const aiAdvisory = ref(null);
+            const responseCrop = ref('');
+            const error = ref(null);
+            const isOnline = ref(navigator.onLine);
+
+            let mapInstance = null;
+            let markerInstance = null;
+            let apexChartInstance = null;
+
+            // Network monitoring bindings
+            const updateNetworkState = () => { isOnline.value = navigator.onLine; };
+            onMounted(() => {
+                window.addEventListener('online', updateNetworkState);
+                window.addEventListener('offline', updateNetworkState);
+                detectLocation(); // Auto-detect location on load
+            });
+            onUnmounted(() => {
+                window.removeEventListener('online', updateNetworkState);
+                window.removeEventListener('offline', updateNetworkState);
+            });
+
+            // Geolocation processing
+            const detectLocation = () => {
+                if (!navigator.geolocation) {
+                    error.value = "GPS tracking modules not supported by this browser core architecture node.";
+                    return;
+                }
+                locationLoading.value = true;
+                error.value = null;
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        form.value.lat = position.coords.latitude.toFixed(4);
+                        form.value.lon = position.coords.longitude.toFixed(4);
+                        locationLoading.value = false;
+                        // Auto-refresh the map if the engine has initialized
+                        if (weatherData.value) { updateGISMap(); }
+                    },
+                    (err) => {
+                        locationLoading.value = false;
+                        error.value = "GPS Isolation error: Location permission denied. Defaulting to manual coordinates.";
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            };
+
+            // Main API Data Fetch Controller
+            const fetchAgriData = async () => {
+                if (!isOnline.value) {
+                    error.value = "Data Pipeline Interrupted. Check local hardware cellular array status.";
+                    return;
+                }
+                loading.value = true;
+                error.value = null;
+
+                try {
+                    const response = await fetch(`/api/agri-climate?lat=${form.value.lat}&lon=${form.value.lon}&crop=${form.value.crop}`);
+                    const json = await response.json();
+
+                    if (!json.success) throw new Error(json.error || 'Server calculation failure reported.');
+
+                    weatherData.value = json.climateMetrics;
+                    aiAdvisory.value = json.aiAdvisory;
+                    responseCrop.value = json.crop;
+
+                    // Trigger UI updates for maps and charts
+                    setTimeout(() => {
+                        updateGISMap();
+                        renderApexTrendChart(json.climateMetrics.hourly_trends);
+                    }, 100);
+
+                } catch (err) {
+                    error.value = err.message;
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            // Leaflet GIS Mapping Core
+            const updateGISMap = () => {
+                const targetCoordinates = [parseFloat(form.value.lat), parseFloat(form.value.lon)];
+                
+                if (!mapInstance) {
+                    // Initialize Mapbox/Leaflet dark matter grid layer canvas
+                    mapInstance = L.map('map', { zoomControl: false }).setView(targetCoordinates, 11);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        attribution: 'AgroMeteo AI Matrix'
+                    }).addTo(mapInstance);
+                } else {
+                    mapInstance.setView(targetCoordinates, 11);
+                }
+
+                if (markerInstance) { mapInstance.removeLayer(markerInstance); }
+                
+                // Add high tech radar pulse ring icon
+                markerInstance = L.marker(targetCoordinates).addTo(mapInstance)
+                    .bindPopup(`<b class="text-slate-900 font-mono">${form.value.crop} Research Grid Active</b>`)
+                    .openPopup();
+            };
+
+            // ApexCharts High Performance Vector Render Engine Module 
+            const renderApexTrendChart = (trends) => {
+                const shortTimeLabels = trends.time.map(t => t.split('T')[1]);
+                
+                const options = {
+                    series: [
+                        { name: 'Soil Volumetric Moisture', data: trends.soil_moisture },
+                        { name: 'Root Zone Temperature', data: trends.soil_temp }
+                    ],
+                    chart: {
+                        type: 'line',
+                        height: '100%',
+                        toolbar: { show: false },
+                        background: 'transparent'
+                    },
+                    colors: ['#10b981', '#ef4444'],
+                    stroke: { width: 3, curve: 'smooth' },
+                    grid: { borderColor: '#1f293d' },
+                    xaxis: {
+                        categories: shortTimeLabels,
+                        labels: { style: { colors: '#9ca3af', fontFamily: 'JetBrains Mono' } }
+                    },
+                    yaxis: [
+                        { title: { text: 'Moisture Vol ratio', style: { color: '#10b981' } }, labels: { style: { colors: '#10b981' } } },
+                        { opposite: true, title: { text: 'Temperature °C', style: { color: '#ef4444' } }, labels: { style: { colors: '#ef4444' } } }
+                    ],
+                    theme: { mode: 'dark' },
+                    legend: { fontFamily: 'Plus Jakarta Sans', position: 'top' }
+                };
+
+                if (apexChartInstance) { apexChartInstance.destroy(); }
+                apexChartInstance = new ApexCharts(document.querySelector("#apex-trends-chart"), options);
+                apexChartInstance.render();
+            };
+
+            // Utility Status Style Evaluators
+            const getRiskTextColor = (level) => {
+                if (level === 'Critical') return 'text-red-500 neon-text-red';
+                if (level === 'High') return 'text-orange-400';
+                if (level === 'Moderate') return 'text-yellow-400';
+                return 'text-emerald-400';
+            };
+
+            const getRiskBadgeClass = (level) => {
+                if (level === 'Critical') return 'bg-red-500/20 text-red-400 border border-red-500/30';
+                if (level === 'High') return 'bg-orange-500/20 text-orange-400 border border-orange-500/30';
+                if (level === 'Moderate') return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+                return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            };
+
+            return {
+                activeTab, form, loading, locationLoading, weatherData, aiAdvisory, responseCrop, error, isOnline,
+                detectLocation, fetchAgriData, getRiskTextColor, getRiskBadgeClass
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

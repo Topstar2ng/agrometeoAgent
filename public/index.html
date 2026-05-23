@@ -3,220 +3,565 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroMeteo AI Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!--bootstrap icon-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .gradient-brand { background: linear-gradient(135deg, #1e5631, #4c9a2a); color: white; }
-        .card-stat { border-left: 5px solid #4c9a2a; }
-        .badge-critical { background-color: #dc3545; }
-        .badge-high { background-color: #fd7e14; }
-        .badge-moderate { background-color: #ffc107; color: #212529; }
-        .badge-low { background-color: #198754; }
-    </style>
+    <title>AgriClimate AI - Unified Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
+    <link rel="manifest" href="assets/favicons/site.webmanifest">
 </head>
-<body>
+<body class="text-gray-100 min-h-screen flex selection:bg-emerald-500 selection:text-slate-950">
 
-<div id="app" class="container py-4">
-    <div class="p-4 mb-4 rounded-3 gradient-brand shadow-sm d-flex justify-content-between align-items-center flex-wrap">
-        <div>
-            <h1 class="display-6 fw-bold mb-0">🌱 AgroMeteo AI</h1>
-            <p class="lead mb-0">A Farmer's Intelligent Climate Assistant</p>
-        </div>
-        <div class="bg-white text-dark p-2 rounded shadow-sm mt-2 mt-md-0">
-            <strong>System Status:</strong> <!--check the connection status and display here-->
-            <span id="status"></span>
-        </div>
-    </div>
+    <div id="app" v-cloak class="flex flex-1 w-full min-h-screen overflow-hidden">
+        
+        <aside class="w-72 bg-[#090d1f]/90 border-r border-gray-800/80 flex flex-col justify-between p-6 shrink-0 hidden lg:flex">
+            <div class="space-y-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-leaf text-slate-950 font-bold"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-extrabold tracking-wider font-mono bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AGRICLIMATE AI</h2>
+                        <p class="text-[9px] text-gray-500 font-mono uppercase tracking-widest">Command Console v1.0</p>
+                    </div>
+                </div>
 
-    <!--create a card to briefly explain the application-->
-    <div class="card p-3 mb-4 bg-dark text-warning shadow-sm border-0">
-        <h5 class="fw-bold text-white mb-2">Welcome to AgroMeteo AI!</h5>
-        <p class="border-bottom pb-3">
-            AgroMeteo AI is your intelligent farming assistant, designed to provide real-time climate insights and tailored agricultural advice. By analyzing local weather conditions and crop requirements, our AI agent delivers actionable recommendations to help you optimize your farming practices and mitigate risks. Simply input your target crop and location to receive a comprehensive ecosystem evaluation and personalized guidance for a successful harvest.
-        </p>
-    </div>
+                <nav class="space-y-1.5">
+                    <button @click="activeTab = 'weather'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'weather' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
+                        <i class="fa-solid fa-satellite-dish text-sm w-5 text-center"></i> Weather Engine
+                    </button>
+                    
+                    <button @click="activeTab = 'alerts'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'alerts' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
+                        <i class="fa-solid fa-bell text-sm w-5 text-center"></i> Alert System
+                    </button>
 
-    <div class="card p-3 mb-4 shadow-sm border-0">
-        <form @submit.prevent="fetchAgriData" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label fw-semibold">Target Crop</label>
-                <select v-model="form.crop" class="form-select">
-                    <option value="Maize">Maize (Corn)</option>
-                    <option value="Rice">Rice</option>
-                    <option value="Wheat">Wheat</option>
-                    <option value="Cassava">Cassava</option>
-                    <option value="Vegetables">Leafy Vegetables</option>
-                </select>
+                    <button @click="activeTab = 'reports'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'reports' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
+                        <i class="fa-solid fa-brain text-sm w-5 text-center"></i> AI Report Studio
+                    </button>
+                </nav>
             </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold">Latitude</label>
-                <input type="text" v-model="form.lat" class="form-select" placeholder="12.00">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold">Longitude</label>
-                <input type="text" v-model="form.lon" class="form-select" placeholder="8.50">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-success w-100 fw-bold" :disabled="loading">
-                    <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-                    {{ loading ? 'Analyzing Ecosystem...' : 'Generate AI Advisory' }}
+
+            <div class="pt-4 border-t border-gray-800/60">
+                <button v-if="!isAuthenticated" @click="showAuthModal = true" class="w-full bg-[#0d1426] border border-gray-800 hover:border-emerald-500/30 rounded-xl p-3 flex items-center gap-3 transition group text-left">
+                    <div class="w-7 h-7 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500 group-hover:text-emerald-400 transition">
+                        <i class="fa-solid fa-lock text-xs"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-mono font-bold text-gray-400 block group-hover:text-white transition">SECURE GATEWAY</span>
+                        <span class="text-[9px] font-mono text-gray-600 block uppercase tracking-wider">Login / Register (Optional)</span>
+                    </div>
                 </button>
+
+                <div v-else class="w-full bg-gradient-to-b from-[#0d1426] to-[#090d1f] border border-emerald-500/20 rounded-xl p-3.5 flex flex-col gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xs uppercase">
+                            {{ currentUser.name.slice(0, 2) }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <span class="text-xs font-bold text-white block truncate">{{ currentUser.name }}</span>
+                            <span class="text-[9px] font-mono text-emerald-400 block truncate uppercase tracking-wider">Node Admin: Verified</span>
+                        </div>
+                    </div>
+                    <button @click="logoutSession" class="w-full bg-gray-900/40 hover:bg-red-500/10 border border-gray-800/80 hover:border-red-500/30 font-mono text-[10px] text-gray-400 hover:text-red-400 uppercase py-1.5 rounded-lg transition text-center font-bold">
+                        <i class="fa-solid fa-power-off me-1.5 text-[9px]"></i> Disconnect Session
+                    </button>
+                </div>
             </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto p-4 lg:p-8 space-y-6 relative">
+            
+            <header class="flex flex-col gap-5 bg-[#0d1426]/40 border border-gray-800/60 rounded-2xl p-6 backdrop-blur-md">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <!--show only the status indicator as a simple dot or wifi icon-->
+                            <div :class="['px-3 py-1 text-xs font-bold rounded-full mono-font transition-all', isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse']">
+                                <i :class="['fa-solid me-1.5', isOnline ? 'fa-circle-check' : 'fa-circle-xmark']"></i>
+                                {{ isOnline ? 'ONLINE' : 'OFFLINE' }}
+                            </div>
+                            <h1 class="text-xl font-extrabold tracking-tight uppercase font-mono text-white">
+                                {{ activeTab === 'weather' ? 'WEATHER & CLIMATE ENGINE' : 'AGRICLIMATE RISK SYSTEM' }}
+                            </h1>
+                        </div>
+                        
+                        <p class="text-xs text-gray-400 mt-1 uppercase font-mono tracking-wider">
+                            A Farmer's Intelligent Climate Assistant
+                        </p>
+                    </div>
+
+                    <!-- Offline Banner -->
+                    <div v-if="showOfflineBanner && !isOnline" class="fixed top-0 left-0 right-0 z-50 bg-red-500/90 backdrop-blur-md border-b border-red-400/30 shadow-lg">
+                        <div class="container mx-auto px-4 py-2.5 flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-wifi-slash text-white text-sm animate-pulse"></i>
+                            <p class="text-white text-xs font-mono font-bold uppercase tracking-wider">
+                                You are currently offline. Some features may be unavailable.
+                            </p>
+                            <button @click="testApiConnectivity" class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white text-[10px] font-mono transition">
+                                Retry Connection
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex p-1 bg-[#060913] border border-gray-800 rounded-xl font-mono text-[10px]">
+                        <button @click="locationMode = 'auto'" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase flex items-center gap-1.5', locationMode === 'auto' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400 hover:text-white']">
+                            <i class="fa-solid fa-location-crosshairs"></i> Auto GPS
+                        </button>
+                        <button @click="locationMode = 'manual'" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase flex items-center gap-1.5', locationMode === 'manual' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400 hover:text-white']">
+                            <i class="fa-solid fa-keyboard"></i> Manual Entry
+                        </button>
+                        <button @click="locationMode = 'sector'" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase flex items-center gap-1.5', locationMode === 'sector' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400 hover:text-white']">
+                            <i class="fa-solid fa-layer-group"></i> Sector Groups
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-800/60 pt-4 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        
+                        <div v-if="locationMode === 'auto'" class="flex items-center gap-3">
+                            <button @click="detectLiveLocation" class="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                                <i class="fa-solid fa-location-arrow animate-pulse"></i> Scan Live Coordinates
+                            </button>
+                            <span class="text-xs font-mono text-gray-400">
+                                Current Status: <strong class="text-cyan-400">{{ activeLocationName }}</strong>
+                            </span>
+                        </div>
+
+                        <div v-if="locationMode === 'manual'" class="flex flex-wrap items-center gap-2 font-mono">
+                            <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-1">
+                                <span class="text-[10px] text-gray-500 uppercase me-2">Lat</span>
+                                <input v-model.number="manualCoords.lat" type="number" step="0.0001" min="-90" max="90" class="w-20 bg-transparent text-xs font-bold text-cyan-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-1">
+                                <span class="text-[10px] text-gray-500 uppercase me-2">Lon</span>
+                                <input v-model.number="manualCoords.lon" type="number" step="0.0001" min="-180" max="180" class="w-20 bg-transparent text-xs font-bold text-cyan-400 focus:outline-none">
+                            </div>
+                            <button @click="applyManualCoordinates" class="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-[11px] font-bold uppercase px-3 py-2 rounded-xl transition">
+                                Apply
+                            </button>
+                        </div>
+
+                        <div v-if="locationMode === 'sector'" class="flex items-center gap-3">
+                            <select v-model="selectedLocationIndex" @change="handleSectorChange" class="bg-[#060913] text-xs font-mono text-white border border-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 transition">
+                                <option v-for="(loc, idx) in targetLocations" :key="idx" :value="idx">
+                                    {{ loc.name }} ({{ loc.cropFocus }})
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center bg-[#060913] border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-mono">
+                            <span class="text-gray-500 me-2 uppercase">Active Matrix:</span>
+                            <span class="text-emerald-400 font-bold">{{ activeLatLonString }}</span>
+                        </div>
+                    </div>
+
+                    <button @click="refreshTelemetry" :disabled="loading" class="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:from-gray-800 disabled:to-gray-800 text-slate-950 disabled:text-gray-500 font-extrabold font-mono text-xs uppercase px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10">
+                        <i :class="['fa-solid fa-arrows-rotate', {'animate-spin': loading}]"></i> Sync Telemetry
+                    </button>
+                </div>
+            </header>
+
+            <div v-show="activeTab === 'weather'" class="space-y-6">
+                <div v-if="loading" class="glass-card rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 border border-cyan-500/10">
+                    <i class="fa-solid fa-satellite-dish text-4xl text-cyan-400 animate-bounce"></i>
+                    <p class="text-sm font-bold font-mono tracking-wider uppercase text-white">Establishing Open-Meteo Satellite Sync...</p>
+                </div>
+
+                <div v-else-if="error" class="glass-card rounded-2xl p-8 text-center border border-red-500/20 text-red-400 space-y-2">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    <p class="text-sm font-mono font-bold uppercase">Data Link Fault Encountered: {{ error }}</p>
+                </div>
+
+                <div v-else class="space-y-6">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-md">
+                            <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                                <span>Canopy Thermal Value</span>
+                                <i class="fa-solid fa-temperature-half text-emerald-400 text-sm"></i>
+                            </div>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span class="text-2xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.temperature_2m }}</span>
+                                <span class="text-xs text-emerald-400 font-bold font-mono">°C</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-5 border-l-4 border-cyan-500 shadow-md">
+                            <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                                <span>Vapor Pressure Ratio</span>
+                                <i class="fa-solid fa-droplet text-cyan-400 text-sm"></i>
+                            </div>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span class="text-2xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.relative_humidity_2m }}</span>
+                                <span class="text-xs text-cyan-400 font-bold font-mono">%</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-5 border-l-4 border-blue-500 shadow-md">
+                            <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                                <span>Instant Precipitation</span>
+                                <i class="fa-solid fa-cloud-showers-heavy text-blue-400 text-sm"></i>
+                            </div>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span class="text-2xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.precipitation }}</span>
+                                <span class="text-xs text-blue-400 font-bold font-mono">mm</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-5 border-l-4 border-amber-500 shadow-md">
+                            <div class="flex justify-between items-start text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+                                <span>Wind Velocity</span>
+                                <i class="fa-solid fa-wind text-amber-400 text-sm"></i>
+                            </div>
+                            <div class="mt-2 flex items-baseline gap-1">
+                                <span class="text-2xl font-extrabold tracking-tight text-white font-mono">{{ weatherData.current.wind_speed_10m }}</span>
+                                <span class="text-xs text-amber-400 font-bold font-mono">km/h</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-8 glass-card rounded-2xl p-6 flex flex-col justify-between">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono"><i class="fa-solid fa-chart-line text-emerald-400 me-2"></i> Meteorological Projection Module</h3>
+                                </div>
+                                <div class="flex gap-1.5 p-1 bg-[#060913] border border-gray-800 rounded-xl font-mono text-[10px]">
+                                    <button @click="switchEngineView('7day')" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase', activeView === '7day' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400']">7-Day Forecast</button>
+                                    <button @click="switchEngineView('seasonal')" :class="['px-3 py-1.5 rounded-lg transition font-bold uppercase', activeView === 'seasonal' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950' : 'text-gray-400']">Seasonal Trend</button>
+                                </div>
+                            </div>
+                            <div class="h-[320px] w-full text-slate-950">
+                                <div id="engine-macro-chart" class="w-full h-full"></div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-4 glass-card rounded-2xl p-6 flex flex-col">
+                            <div class="mb-4">
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono"><i class="fa-solid fa-border-top-left text-cyan-400 me-2"></i> Interactive Climate Map</h3>
+                            </div>
+                            <!-- An Interactive map pane, with overlays: Rainfall, Temperature, - Wind, - Vegetation health, - Heat index
+- Soil moisture -->                           
+                            <div class="flex-1 rounded-xl bg-slate-950 border border-gray-800/80 overflow-hidden relative min-h-[200px]">
+                                <div id="map-pane" class="absolute inset-0 z-10"></div>
+                                <!-- Map Overlay Controls -->
+                                <div class="absolute top-2 right-2 z-20 flex flex-col gap-1">
+                                    <button @click="toggleLayer('rainfall')" class="bg-black/60 backdrop-blur-md border border-gray-700 p-1.5 rounded text-[10px] font-mono text-white hover:bg-emerald-500/20 transition">
+                                        <i class="fa-solid fa-cloud-rain me-1"></i> Rain
+                                    </button>
+                                    <button @click="toggleLayer('temp')" class="bg-black/60 backdrop-blur-md border border-gray-700 p-1.5 rounded text-[10px] font-mono text-white hover:bg-orange-500/20 transition">
+                                        <i class="fa-solid fa-temperature-high me-1"></i> Temp
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 font-mono">Extended Forecast Array Grid</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                            <div v-for="(day, index) in weatherData.daily.time" :key="index" class="glass-card rounded-xl p-3 text-center border border-gray-800/80">
+                                <p class="text-[10px] font-mono text-gray-400 uppercase font-bold">{{ formatDayName(day) }}</p>
+                                <i :class="['fa-solid text-base my-2 block', getForecastIconClass(weatherData.daily.precipitation_sum[index])]"></i>
+                                <div class="text-xs font-bold font-mono mt-1 text-white">{{ Math.round(weatherData.daily.temperature_2m_max[index]) }}° / <span class="text-gray-500">{{ Math.round(weatherData.daily.temperature_2m_min[index]) }}°</span></div>
+                                <div class="text-[9px] text-cyan-400 font-mono font-bold mt-1.5"><i class="fa-solid fa-cloud-rain text-[8px]"></i> {{ weatherData.daily.precipitation_sum[index].toFixed(1) }}mm</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 'alerts'" class="space-y-4 font-mono">
+    
+                <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                    <div>
+                        <h3 class="text-xs font-black uppercase text-white tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-bell animate-swing"></i> Real-Time Automated Alerts
+                        </h3>
+                        <p class="text-[10px] text-gray-500 font-sans mt-0.5">Automated telemetry threat evaluation engine</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-gray-900 border border-gray-800 font-bold text-gray-400">
+                        System Scan: Active
+                    </span>
+                </div>
+
+                <div v-if="activeAlerts.length === 0" class="p-6 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl text-center space-y-2 animate-fadeIn">
+                    <i class="fa-solid fa-shield-heart text-emerald-400 text-lg"></i>
+                    <h4 class="text-xs font-bold text-emerald-200 uppercase">Atmospheric Balance Optimal</h4>
+                    <p class="text-[11px] text-gray-400 font-sans max-w-xs mx-auto leading-relaxed">
+                        Current live coordinates show regular parameters. No severe climate threat vector detected for your crops.
+                    </p>
+                </div>
+
+                <div v-else class="space-y-3">
+                    <div v-for="alert in activeAlerts" :key="alert.id" 
+                        :class="['p-4 rounded-xl border flex gap-3 shadow-lg transition-all animate-fadeIn', 
+                            alert.type === 'critical' || alert.type === 'danger' ? 'bg-red-950/20 border-red-500/30' : 'bg-amber-950/20 border-amber-500/20']">
+                        
+                        <div class="shrink-0 text-sm mt-0.5">
+                            <i :class="['fa-solid', alert.icon]"></i>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <h4 :class="['text-xs font-black tracking-wide', 
+                                alert.type === 'critical' || alert.type === 'danger' ? 'text-red-400' : 'text-amber-400']">
+                                {{ alert.title }}
+                            </h4>
+                            <p class="text-[11px] text-gray-300 font-sans leading-relaxed">
+                                {{ alert.message }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- AI Report Studio Tab -->
+            <div v-show="activeTab === 'reports'" class="space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-gray-800">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
+                                <i class="fa-solid fa-microchip-ai text-cyan-400 me-2"></i> Gemini Cognitive Reasoning Engine
+                            </h3>
+                            <p class="text-[11px] text-gray-500 font-mono mt-0.5">Synthesizing live matrix data into dynamic crop intelligence parameters.</p>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 w-full md:w-auto font-mono text-xs">
+                            <span class="text-gray-400 uppercase text-[10px]">Matrix Focus:</span>
+                            <select v-model="cropSelection" class="bg-[#060913] text-white border border-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
+                                <option value="Maize">Maize (Corn Plot)</option>
+                                <option value="Rice">Rice (Lowland Paddy)</option>
+                                <option value="Wheat">Wheat (Grain Canopy)</option>
+                                <option value="Cassava">Cassava (Root Crop)</option>
+                                <option value="Vegetables">Leafy Vegetables</option>
+                                <option value="Tomato">Tomato (Solanaceous)</option>
+                                <option value="Cocoa">Cocoa (Cash Crop)</option>
+                                <option value="Yam">Yam (Tuber)</option>
+                                <option value="Sorghum">Sorghum (Drought-Resistant)</option>
+                                <option value="Groundnut">Groundnut (Legume)</option>
+                                <option value="Sugarcane">Sugarcane (Biofuel Crop)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button @click="generateFarmAIInsight" :disabled="generatingReport" class="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-extrabold font-mono text-xs uppercase py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 hover:opacity-90 disabled:opacity-50">
+                        <i :class="['fa-solid', generatingReport ? 'fa-spinner animate-spin' : 'fa-wand-magic-sparkles']"></i>
+                        {{ generatingReport ? 'Compiling Environmental Intelligence...' : 'Execute AI Diagnostic Analysis' }}
+                    </button>
+                </div>
+
+                <div v-if="aiReport && !generatingReport" class="space-y-6 transition-all duration-500 transform translate-y-0 opacity-100 font-mono">
+    
+                    <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl', 
+                        aiReport.overallRisk === 'HIGH' || aiReport.overallRisk === 'CRITICAL' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200']">
+                        <div>
+                            <span class="text-[10px] tracking-widest uppercase opacity-60 block mb-1">Live Engine Critique</span>
+                            <h4 class="text-sm font-black uppercase flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> {{ aiReport.statusTitle }}
+                            </h4>
+                            <p class="text-xs mt-1 text-gray-300 font-sans leading-relaxed">{{ aiReport.currentSituation }}</p>
+                        </div>
+                        <div class="shrink-0 text-center px-4 py-2 bg-black/40 border border-white/5 rounded-xl">
+                            <span class="text-[9px] uppercase tracking-wider block opacity-50">Risk Index</span>
+                            <span class="text-sm font-black tracking-widest uppercase" :class="aiReport.overallRisk === 'HIGH' || aiReport.overallRisk === 'CRITICAL' ? 'text-red-400' : 'text-emerald-400'">
+                                {{ aiReport.overallRisk }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Planting Status</div>
+                            <div class="text-base font-black uppercase tracking-wide" :class="aiReport.metrics.suitability === 'POOR' ? 'text-red-400' : 'text-emerald-400'">
+                                {{ aiReport.metrics.suitability }}
+                            </div>
+                        </div>
+                        
+                        <div :class="['border rounded-xl p-4 shadow-lg transition-all duration-300', 
+    aiReport.metrics.irrigation === 'CRITICAL' || aiReport.metrics.irrigation === 'URGENT' 
+    ? 'bg-cyan-950/40 border-cyan-500/40' 
+    : 'bg-[#0b1120] border-gray-800']">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Irrigation Urgency</div>
+                            <div class="text-base font-black uppercase tracking-wide animate-pulse" 
+                                :class="aiReport.metrics.irrigation === 'CRITICAL' || aiReport.metrics.irrigation === 'URGENT' ? 'text-cyan-400' : 'text-gray-400'">
+                                {{ aiReport.metrics.irrigation }}
+                            </div>
+                        </div>
+
+                        <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Biological Risk</div>
+                            <div class="text-base font-black uppercase tracking-wide text-amber-400">
+                                {{ aiReport.metrics.pestThreat }} THREAT
+                            </div>
+                            <p class="text-[11px] text-gray-400 font-sans leading-tight mt-1">{{ aiReport.metrics.threatReason }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="bg-[#071311] border border-emerald-500/20 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest border-b border-emerald-500/10 pb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check"></i> Recommended Field Actions (DO)
+                            </div>
+                            <div class="space-y-3 font-sans">
+                                <div v-for="(item, i) in aiReport.dos" :key="i" class="p-3 bg-black/40 border border-emerald-500/10 rounded-xl space-y-1">
+                                    <span class="text-xs font-mono font-black text-emerald-400 tracking-wide block">✔️ {{ item.title }}</span>
+                                    <span class="text-[11px] text-gray-300 leading-relaxed block">{{ item.description }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#140b0f] border border-red-500/20 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div class="text-xs font-bold text-red-400 uppercase tracking-widest border-b border-red-500/10 pb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-xmark"></i> Critical Restrictions (DON'T)
+                            </div>
+                            <div class="space-y-3 font-sans">
+                                <div v-for="(item, i) in aiReport.donts" :key="i" class="p-3 bg-black/40 border border-red-500/10 rounded-xl space-y-1">
+                                    <span class="text-xs font-mono font-black text-red-400 tracking-wide block">❌ {{ item.title }}</span>
+                                    <span class="text-[11px] text-gray-300 leading-relaxed block">{{ item.description }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="bg-gradient-to-r from-cyan-950/20 to-emerald-950/20 border border-gray-800 rounded-xl p-4 flex items-start gap-3 shadow-md">
+                        <i class="fa-solid fa-lightbulb text-cyan-400 text-sm mt-0.5 shrink-0"></i>
+                        <div>
+                            <span class="text-[9px] uppercase tracking-wider text-cyan-400 font-bold block">Smart Adaptation Vector</span>
+                            <p class="text-xs text-gray-400 font-sans mt-0.5 leading-relaxed">{{ aiReport.futureTip }}</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+        <div v-if="showAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay">
+            <div class="glass-card rounded-2xl border border-emerald-500/20 max-w-md w-full overflow-hidden shadow-2xl shadow-emerald-950/20">
+                <div class="flex border-b border-gray-800/80 bg-[#090d1f]/60 font-mono text-xs uppercase tracking-wider">
+                    <button @click="authMode = 'login'" :class="['flex-1 py-4 text-center font-bold transition', authMode === 'login' ? 'text-emerald-400 border-b-2 border-emerald-500 bg-white/[0.02]' : 'text-gray-500 hover:text-gray-300']">
+                        <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Access Account
+                    </button>
+                    <button @click="authMode = 'register'" :class="['flex-1 py-4 text-center font-bold transition', authMode === 'register' ? 'text-emerald-400 border-b-2 border-emerald-500 bg-white/[0.02]' : 'text-gray-500 hover:text-gray-300']">
+                        <i class="fa-solid fa-user-plus me-2"></i> Create Profile
+                    </button>
+                </div>
+
+                <form @submit.prevent="executeAuthSubmit" class="p-6 space-y-4">
+                    <div v-if="authMessage.text" :class="['p-3 rounded-xl border font-mono text-[11px] flex gap-2 items-start', authMessage.isError ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400']">
+                        <i :class="['fa-solid mt-0.5', authMessage.isError ? 'fa-triangle-exclamation' : 'fa-circle-check']"></i>
+                        <span>{{ authMessage.text }}</span>
+                    </div>
+
+                    <div v-if="authMode === 'register'" class="space-y-1.5">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-400">Farmer / Operator Full Name</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-3.5 text-xs text-gray-500"></i>
+                            <input v-model="authForm.name" type="text" placeholder="e.g. John Doe" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-400">Network Email ID</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-xs text-gray-500"></i>
+                            <input v-model="authForm.email" type="email" placeholder="operator@agriclimate.io" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-400">Secure Vault Phrase</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-key absolute left-4 top-3.5 text-xs text-gray-500"></i>
+                            <input v-model="authForm.password" type="password" placeholder="••••••••••••" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="closeAuthWorkspace" class="flex-1 bg-gray-900/60 border border-gray-800 hover:border-gray-700 text-gray-400 hover:text-white font-mono text-xs uppercase font-bold py-3 rounded-xl transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-slate-950 font-mono text-xs font-extrabold uppercase py-3 rounded-xl shadow-lg shadow-emerald-500/10 transition">
+                            {{ authMode === 'login' ? 'Establish Link' : 'Register Node' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AI Chat Copilot Interface -->
+     <!---
+    <div class="fixed bottom-6 right-6 z-50 font-mono flex flex-col items-end">
+    
+    <div v-if="isChatOpen" class="w-[360px] h-[480px] bg-[#090d16] border border-gray-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-fadeIn">
+        
+        <div class="p-4 bg-gradient-to-r from-emerald-900/40 to-cyan-900/40 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                <div>
+                    <h5 class="text-xs font-black uppercase text-white tracking-wider">AgroMeteo Copilot</h5>
+                    <span class="text-[9px] text-gray-400 font-sans block leading-none mt-0.5">Gemini 2.5 Field Intelligence</span>
+                </div>
+            </div>
+            <button @click="toggleChat" class="text-gray-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+        </div>
+
+        <div ref="chatContainer" id="chat-scroll-container" class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
+            <div v-for="(msg, index) in chatMessages" :key="index" 
+                 :class="['flex flex-col max-w-[85%] rounded-xl p-3 text-xs font-sans leading-relaxed shadow-sm', 
+                    msg.sender === 'user' ? 'bg-emerald-600 border border-emerald-500 text-white self-end rounded-br-none' : 'bg-gray-900 border border-gray-800 text-gray-200 self-start rounded-bl-none']">
+                {{ msg.text }}
+            </div>
+
+            <div v-if="isChatTyping" class="bg-gray-900 border border-gray-800 text-gray-400 self-start rounded-xl rounded-bl-none p-3 max-w-[85%] flex items-center gap-1.5 shadow-sm">
+                <span class="text-[10px] font-mono uppercase tracking-widest opacity-60 mr-1">Parsing Matrix</span>
+                <div class="flex gap-1 items-center justify-center pt-0.5">
+                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 border-t border-gray-900/50 bg-[#070a10]">
+            <button @click="setChatPreset('Can I plant maize this week?')" class="text-[10px] text-cyan-400/80 bg-cyan-950/30 border border-cyan-900/40 rounded-md px-2 py-1 hover:border-cyan-500/40 transition-colors">🌾 Maize?</button>
+            <button @click="setChatPreset('Will rainfall affect tomatoes?')" class="text-[10px] text-amber-400/80 bg-amber-950/30 border border-amber-900/40 rounded-md px-2 py-1 hover:border-amber-500/40 transition-colors">🍅 Tomatoes?</button>
+            <button @click="setChatPreset('When should irrigation start?')" class="text-[10px] text-emerald-400/80 bg-emerald-950/30 border border-emerald-900/40 rounded-md px-2 py-1 hover:border-emerald-500/40 transition-colors">💧 Irrigation?</button>
+        </div>
+
+        <form @submit.prevent="sendChatMessage" class="p-2 bg-[#06090f] border-t border-gray-800/80 flex gap-1">
+            <input v-model="chatMessage" type="text" placeholder="Consult agronomy intelligence matrix..." 
+                   class="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-sans transition-all" />
+            <button type="submit" :disabled="isChatTyping" class="bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 disabled:opacity-40 text-white rounded-lg px-3 text-xs transition-colors shadow-md">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
         </form>
     </div>
 
-    <div v-if="error" class="alert alert-danger shadow-sm" role="alert">
-        ⚠️ {{ error }}
-    </div>
-
-    <div v-if="weatherData && aiAdvisory" class="row">
-        
-        <div class="col-lg-5 mb-4">
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
-                    <span>🤖 AI AGENT EVALUATION</span>
-                    <span :class="['badge p-2 text-uppercase', 'badge-' + aiAdvisory.riskLevel.toLowerCase()]">
-                        Risk: {{ aiAdvisory.riskLevel }}
-                    </span>
-                </div>
-                <div class="card-body">
-                    <h5 class="fw-bold text-success mb-2">{{ responseCrop }} Crop Assessment</h5>
-                    <p class="text-muted border-bottom pb-3">{{ aiAdvisory.summary }}</p>
-                    
-                    <h6 class="fw-bold text-success mt-3">📋 Actionable DOs:</h6>
-                    <ul class="list-group list-group-flush mb-3">
-                        <li v-for="(item, idx) in aiAdvisory.dos" :key="'do-'+idx" class="list-group-item ps-0 border-0">
-                            🟢 {{ item }}
-                        </li>
-                    </ul>
-
-                    <h6 class="fw-bold text-danger mt-3">⚠️ Strict DONTs:</h6>
-                    <ul class="list-group list-group-flush">
-                        <li v-for="(item, idx) in aiAdvisory.donts" :key="'dont-'+idx" class="list-group-item ps-0 border-0">
-                            🔴 {{ item }}
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-6 mb-3">
-                    <div class="card border-0 shadow-sm p-3 card-stat">
-                        <small class="text-uppercase text-muted d-block">Air Temp</small>
-                        <span class="fs-3 fw-bold text-dark">{{ weatherData.current.temperature_2m }}°C</span>
-                    </div>
-                </div>
-                <div class="col-6 mb-3">
-                    <div class="card border-0 shadow-sm p-3 card-stat">
-                        <small class="text-uppercase text-muted d-block">Humidity</small>
-                        <span class="fs-3 fw-bold text-dark">{{ weatherData.current.relative_humidity_2m }}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-7 mb-4">
-            <div class="card border-0 shadow-sm p-4 h-100">
-                <h5 class="fw-bold text-dark mb-4">📉 Next 24-Hour Environmental Trends</h5>
-                <div style="position: relative; height: 350px;">
-                    <canvas id="trendsChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <!--include a footer-->
-    <div class="text-center text-muted mt-4 mb-2">
-        &copy; 2024 AgroMeteo AI. All rights reserved. | Developed by <a href="https://portfolio.tecspectratechnologies.com/" target="_blank" class="text-decoration-none">Temitope O.</a>
-    </div>
-
+    <button @click="toggleChat" :class="['w-12 h-12 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border', 
+        isChatOpen ? 'bg-red-600 border-red-500 rotate-90' : 'bg-emerald-600 border-emerald-500']">
+        <i v-if="isChatOpen" class="fa-solid fa-xmark text-base"></i>
+        <i v-else class="fa-solid fa-robot text-base animate-pulse"></i>
+    </button>
 </div>
+-->
 
-<script>
-    const { createApp, ref } = Vue;
-
-    createApp({
-        setup() {
-            const form = ref({ crop: 'Maize', lat: '12.00', lon: '8.50' });
-            const loading = ref(false);
-            const weatherData = ref(null);
-            const aiAdvisory = ref(null);
-            const responseCrop = ref('');
-            const error = ref(null);
-            let chartInstance = null;
-
-            const fetchAgriData = async () => {
-                loading.value = true;
-                error.value = null;
-                try {
-                    const res = await fetch(`/api/agri-climate?lat=${form.value.lat}&lon=${form.value.lon}&crop=${form.value.crop}`);
-                    const json = await res.json();
-                    
-                    if (!json.success) throw new Error(json.error || 'Failed to capture server context.');
-                    
-                    weatherData.value = json.climateMetrics;
-                    aiAdvisory.value = json.aiAdvisory;
-                    responseCrop.value = json.crop;
-
-                    // Trigger rendering of Chart trends on next DOM update tick
-                    setTimeout(() => renderChart(json.climateMetrics.hourly_trends), 100);
-
-                } catch (err) {
-                    error.value = err.message;
-                } finally {
-                    loading.value = false;
-                }
-            };
-
-            const renderChart = (trends) => {
-                const ctx = document.getElementById('trendsChart').getContext('2d');
-                if (chartInstance) chartInstance.destroy(); // Clear active instances
-
-                // Extract short labels for time strings (e.g. "14:00")
-                const hourLabels = trends.time.map(t => t.split('T')[1]);
-
-                chartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: hourLabels,
-                        datasets: [
-                            {
-                                label: 'Soil Moisture (0-7cm Vol %)',
-                                data: trends.soil_moisture,
-                                borderColor: '#0d6efd',
-                                backgroundColor: 'transparent',
-                                yAxisID: 'yMoisture',
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Soil Temperature (°C)',
-                                data: trends.soil_temp,
-                                borderColor: '#dc3545',
-                                backgroundColor: 'transparent',
-                                yAxisID: 'yTemp',
-                                tension: 0.3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            yMoisture: { type: 'linear', position: 'left', title: { display: true, text: 'Soil Moisture Vol mixing ratio' } },
-                            yTemp: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Temperature °C' } }
-                        }
-                    }
-                });
-            };
-
-            return { form, loading, weatherData, aiAdvisory, responseCrop, error, fetchAgriData };
-        }
-    }).mount('#app');
-</script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

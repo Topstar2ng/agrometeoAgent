@@ -3,7 +3,7 @@ node_modules/
 jspm_packages/
 web_modules/
 
-# Local Environment Variables (CRITICAL: Shields your private API Keys)
+# Local Environment Variables (CRITICAL: Shields private API Keys)
 .env
 .env.local
 .env.*.local
