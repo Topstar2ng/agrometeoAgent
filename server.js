@@ -255,6 +255,31 @@ authRouter.post('/login', async (req, res) => {
     }
 });
 
+// TOKEN VERIFICATION ENDPOINT
+authRouter.get('/verify', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: "No token provided" });
+        }
+        
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Check if user still exists in database
+        const sql = `SELECT id, username, email FROM users WHERE id = ?`;
+        const [rows] = await pool.execute(sql, [decoded.id]);
+        
+        if (rows.length === 0) {
+            return res.status(401).json({ error: "User not found" });
+        }
+        
+        res.json({ valid: true, user: rows[0] });
+    } catch (error) {
+        res.status(401).json({ error: "Invalid token" });
+    }
+});
+
 // Bind auth routes to the main application middleware
 app.use('/api/auth', authRouter);
 

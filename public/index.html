@@ -34,16 +34,41 @@
                 </div>
 
                 <nav class="space-y-1.5">
-                    <button @click="activeTab = 'weather'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'weather' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
-                        <i class="fa-solid fa-satellite-dish text-sm w-5 text-center"></i> Weather Engine
+                    <button 
+                        @click="setActiveTab('weather')" 
+                        :class="['nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', 
+                        activeTab === 'weather' ? 'active-nav' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']"
+                    >
+                        <i class="fa-solid fa-satellite-dish text-sm w-5 text-center"></i> 
+                        <span>Weather Engine</span>
                     </button>
                     
-                    <button @click="activeTab = 'alerts'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'alerts' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
-                        <i class="fa-solid fa-bell text-sm w-5 text-center"></i> Alert System
+                    <button 
+                        @click="setActiveTab('alerts')" 
+                        :class="['nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', 
+                        activeTab === 'alerts' ? 'active-nav' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']"
+                    >
+                        <i class="fa-solid fa-bell text-sm w-5 text-center"></i> 
+                        <span>Alert System</span>
                     </button>
 
-                    <button @click="activeTab = 'reports'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', activeTab === 'reports' ? 'bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']">
-                        <i class="fa-solid fa-brain text-sm w-5 text-center"></i> AI Report Studio
+                    <button 
+                        @click="setActiveTab('reports')" 
+                        :class="['nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', 
+                        activeTab === 'reports' ? 'active-nav' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']"
+                    >
+                        <i class="fa-solid fa-brain text-sm w-5 text-center"></i> 
+                        <span>AI Crop Advisory</span>
+                    </button>
+
+                    <!-- Disease Detection -->
+                    <button 
+                        @click="setActiveTab('disease')" 
+                        :class="['nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-mono text-xs uppercase tracking-wider transition font-bold', 
+                        activeTab === 'disease' ? 'active-nav' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent']"
+                    >
+                        <i class="fa-solid fa-bug text-sm w-5 text-center"></i> 
+                        <span>Disease Detection</span>
                     </button>
                 </nav>
             </div>
@@ -172,7 +197,7 @@
             <div v-show="activeTab === 'weather'" class="space-y-6">
                 <div v-if="loading" class="glass-card rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4 border border-cyan-500/10">
                     <i class="fa-solid fa-satellite-dish text-4xl text-cyan-400 animate-bounce"></i>
-                    <p class="text-sm font-bold font-mono tracking-wider uppercase text-white">Establishing Open-Meteo Satellite Sync...</p>
+                    <p class="text-sm font-bold font-mono tracking-wider uppercase text-white">Establishing Meteorological Satellite Sync...</p>
                 </div>
 
                 <div v-else-if="error" class="glass-card rounded-2xl p-8 text-center border border-red-500/20 text-red-400 space-y-2">
@@ -245,23 +270,63 @@
 
                         <div class="lg:col-span-4 glass-card rounded-2xl p-6 flex flex-col">
                             <div class="mb-4">
-                                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono"><i class="fa-solid fa-border-top-left text-cyan-400 me-2"></i> Interactive Climate Map</h3>
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
+                                    <i class="fa-solid fa-border-top-left text-cyan-400 me-2"></i> Interactive Climate Map
+                                </h3>
+                                <p class="text-[10px] text-gray-500 font-mono mt-0.5">Toggle layers for real-time environmental data</p>
                             </div>
-                            <!-- An Interactive map pane, with overlays: Rainfall, Temperature, - Wind, - Vegetation health, - Heat index
-- Soil moisture -->                           
-                            <div class="flex-1 rounded-xl bg-slate-950 border border-gray-800/80 overflow-hidden relative min-h-[200px]">
-                                <div id="map-pane" class="absolute inset-0 z-10"></div>
-                                <!-- Map Overlay Controls -->
-                                <div class="absolute top-2 right-2 z-20 flex flex-col gap-1">
-                                    <button @click="toggleLayer('rainfall')" class="bg-black/60 backdrop-blur-md border border-gray-700 p-1.5 rounded text-[10px] font-mono text-white hover:bg-emerald-500/20 transition">
-                                        <i class="fa-solid fa-cloud-rain me-1"></i> Rain
-                                    </button>
-                                    <button @click="toggleLayer('temp')" class="bg-black/60 backdrop-blur-md border border-gray-700 p-1.5 rounded text-[10px] font-mono text-white hover:bg-orange-500/20 transition">
-                                        <i class="fa-solid fa-temperature-high me-1"></i> Temp
-                                    </button>
+                            
+                            <!-- Map Layer Controls -->
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                <button @click="toggleLayer('rainfall')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.rainfall ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-cloud-rain me-1"></i> Rainfall
+                                </button>
+                                <button @click="toggleLayer('temperature')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.temperature ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-temperature-high me-1"></i> Temperature
+                                </button>
+                                <button @click="toggleLayer('wind')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.wind ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-wind me-1"></i> Wind
+                                </button>
+                                <button @click="toggleLayer('vegetation')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.vegetation ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-leaf me-1"></i> Veg Health
+                                </button>
+                                <button @click="toggleLayer('heatIndex')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.heatIndex ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-fire me-1"></i> Heat Index
+                                </button>
+                                <button @click="toggleLayer('soilMoisture')" 
+                                    :class="['px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all duration-200', 
+                                    activeMapLayers.soilMoisture ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-gray-800/50 text-gray-400 border border-gray-700']">
+                                    <i class="fa-solid fa-droplet me-1"></i> Soil Moisture
+                                </button>
+                            </div>
+                            
+                            <!-- Map Container -->
+                            <div class="flex-1 rounded-xl bg-slate-950 border border-gray-800/80 overflow-hidden relative min-h-[300px]">
+                                <div id="map-pane" class="absolute inset-0 z-10" style="height: 100%; width: 100%;"></div>
+                            </div>
+                            
+                            <!-- Map Legend -->
+                            <div class="mt-3 pt-3 border-t border-gray-800/60">
+                                <div class="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-2">Layer Legend</div>
+                                <div class="grid grid-cols-2 gap-2 text-[9px] font-mono">
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="text-gray-400">Rainfall Intensity</span></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-orange-500"></div><span class="text-gray-400">Temperature Zone</span></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-yellow-500"></div><span class="text-gray-400">Wind Vectors</span></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-green-500"></div><span class="text-gray-400">Vegetation Health</span></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-gray-400">Heat Index</span></div>
+                                    <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-cyan-500"></div><span class="text-gray-400">Soil Moisture</span></div>
                                 </div>
                             </div>
-
                         </div>
 
                     </div>
@@ -325,7 +390,7 @@
 
             </div>
 
-            <!-- AI Report Studio Tab -->
+            <!-- AI Crop Advisory Tab -->
             <div v-show="activeTab === 'reports'" class="space-y-6">
                 <div class="glass-card rounded-2xl p-6 border border-gray-800">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -445,11 +510,93 @@
 
                 </div>
             </div>
+
+            <!--Disease Detection Tab-->
+            <div v-show="activeTab === 'diseases'" class="space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-gray-800">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 font-mono">
+                                <i class="fa-solid fa-virus text-red-400 me-2"></i> PathoScan Diagnostic Interface
+                            </h3>
+                            <p class="text-[11px] text-gray-500 font-mono mt-0.5">AI-driven crop disease detection and management advisory system.</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full md:w-auto font-mono text-xs">
+                            <span class="text-gray-400 uppercase text-[10px]">Crop Focus:</span>
+                            <select v-model="diseaseCropSelection" class="bg-[#060913] text-white border border-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
+                                <option value="Maize">Maize (Corn Plot)</option>
+                                <option value="Rice">Rice (Lowland Paddy)</option>
+                                <option value="Wheat">Wheat (Grain Canopy)</option>
+                                <option value="Cassava">Cassava (Root Crop)</option>
+                                <option value="Vegetables">Leafy Vegetables</option>
+                                <option value="Tomato">Tomato (Solanaceous)</option>
+                                <option value="Cocoa">Cocoa (Cash Crop)</option>
+                                <option value="Yam"> Yam (Tuber)</option>
+                                <option value="Sorghum">Sorghum (Drought-Resistant)</option>
+                                <option value="Groundnut">Groundnut (Legume)</option>   
+                                <option value="Sugarcane">Sugarcane (Biofuel Crop)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button @click="generateDiseaseReport" :disabled="generatingReport" class="w-full bg-gradient-to-r from-red-500 to-amber-500 text-slate-950 font-extrabold font-mono text-xs uppercase py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-red-500/10 hover:opacity-90 disabled:opacity-50">
+                        <i :class="['fa-solid ', generatingReport ? 'fa-spinner animate-spin' : 'fa-microscope']"></i>
+                        {{ generatingReport ? 'Analyzing Crop Health...' : 'Execute Disease Diagnostic Scan' }}
+                    </button>
+                </div>
+
+                <div v-if="diseaseReport && !generatingReport" class="space-y-6 transition-all duration-500 transform translate-y-0 opacity-100 font-mono">
+                    <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl', 
+                        diseaseReport.overallHealth === 'CRITICAL' || diseaseReport.overallHealth === 'POOR' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200']">
+                        <div>
+                            <span class="text-[10px] tracking-widest uppercase opacity-60 block mb-1">Diagnostic Summary</span>
+                            <h4 class="text-sm font-black uppercase flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> {{ diseaseReport.statusTitle }}
+                            </h4>
+                            <p class="text-xs mt-2">
+                                {{ diseaseReport.statusDescription }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Disease Presence</div>
+                            <div class="text-base font-black uppercase tracking-wide" :class="diseaseReport.metrics.diseasePresence === 'HIGH' || diseaseReport.metrics.diseasePresence === 'CRITICAL' ? 'text-red-400' : 'text-emerald-400'">
+                                {{ diseaseReport.metrics.diseasePresence }}
+                            </div>
+                        </div>
+
+                        <div :class="['border rounded-xl p-4 shadow-lg transition-all duration-300', 
+    diseaseReport.metrics.infectionSpread === 'CRITICAL' || diseaseReport.metrics.infectionSpread === 'HIGH'
+    ? 'bg-red-950/40 border-red-500/40' 
+    : 'bg-[#0b1120] border-gray-800']">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Infection Spread</div>
+                            <div class="text-base font-black uppercase tracking-wide animate-pulse" 
+                                :class="diseaseReport.metrics.infectionSpread === 'CRITICAL' || diseaseReport.metrics.infectionSpread === 'HIGH' ? 'text-red-400' : 'text-gray-400'">
+                                {{ diseaseReport.metrics.infectionSpread }}
+                            </div>
+                        </div>
+
+                        <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
+                            <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Pest Infestation</div>
+                            <div class="text-base font-black uppercase tracking-wide text-amber-400">
+                                {{ diseaseReport.metrics.pestInfestation }} THREAT
+                            </div>
+                            <p class="text-[11px] text-gray-500">
+                                {{ diseaseReport.metrics.pestInfestationDescription }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
 
-        <div v-if="showAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 glass-overlay">
-            <div class="glass-card rounded-2xl border border-emerald-500/20 max-w-md w-full overflow-hidden shadow-2xl shadow-emerald-950/20">
-                <div class="flex border-b border-gray-800/80 bg-[#090d1f]/60 font-mono text-xs uppercase tracking-wider">
+        <!-- Auth Modal -->
+        <div v-if="showAuthModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div class="glass-card w-full max-w-md rounded-3xl overflow-hidden border border-gray-800 shadow-2xl animate-fadeIn">
+                <div class="flex border-b border-gray-800">
                     <button @click="authMode = 'login'" :class="['flex-1 py-4 text-center font-bold transition', authMode === 'login' ? 'text-emerald-400 border-b-2 border-emerald-500 bg-white/[0.02]' : 'text-gray-500 hover:text-gray-300']">
                         <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Access Account
                     </button>
@@ -468,7 +615,7 @@
                         <label class="text-[10px] font-mono uppercase tracking-wider text-gray-400">Farmer / Operator Full Name</label>
                         <div class="relative">
                             <i class="fa-solid fa-user absolute left-4 top-3.5 text-xs text-gray-500"></i>
-                            <input v-model="authForm.name" type="text" placeholder="e.g. John Doe" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                            <input v-model="authForm.name" type="text" placeholder="e.g. Temitope O" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
                         </div>
                     </div>
 
@@ -484,7 +631,10 @@
                         <label class="text-[10px] font-mono uppercase tracking-wider text-gray-400">Secure Vault Phrase</label>
                         <div class="relative">
                             <i class="fa-solid fa-key absolute left-4 top-3.5 text-xs text-gray-500"></i>
-                            <input v-model="authForm.password" type="password" placeholder="••••••••••••" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                            <input v-model="authForm.password" :type="showPassword ? 'text' : 'password'" placeholder="••••••••••••" class="w-full bg-[#060913] border border-gray-800 focus:border-emerald-500 rounded-xl pl-10 pr-12 py-3 text-xs text-white placeholder-gray-600 focus:outline-none font-mono transition" required>
+                            <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-3 text-gray-500 hover:text-emerald-400 transition">
+                                <i :class="['fa-solid', showPassword ? 'fa-eye-slash' : 'fa-eye']"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -492,74 +642,51 @@
                         <button type="button" @click="closeAuthWorkspace" class="flex-1 bg-gray-900/60 border border-gray-800 hover:border-gray-700 text-gray-400 hover:text-white font-mono text-xs uppercase font-bold py-3 rounded-xl transition">
                             Cancel
                         </button>
-                        <button type="submit" class="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-slate-950 font-mono text-xs font-extrabold uppercase py-3 rounded-xl shadow-lg shadow-emerald-500/10 transition">
-                            {{ authMode === 'login' ? 'Establish Link' : 'Register Node' }}
+                        <button type="submit" :disabled="authLoading" class="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-slate-950 font-mono text-xs font-extrabold uppercase py-3 rounded-xl shadow-lg shadow-emerald-500/10 transition disabled:opacity-50">
+                            <i :class="['fa-solid', authLoading ? 'fa-spinner fa-spin' : (authMode === 'login' ? 'fa-arrow-right-to-bracket' : 'fa-user-plus')]" class="me-2"></i>
+                            {{ authLoading ? 'Processing...' : (authMode === 'login' ? 'Establish Link' : 'Register Node') }}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-
-    </div>
-
-    <!-- AI Chat Copilot Interface -->
-     <!---
-    <div class="fixed bottom-6 right-6 z-50 font-mono flex flex-col items-end">
-    
-    <div v-if="isChatOpen" class="w-[360px] h-[480px] bg-[#090d16] border border-gray-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-fadeIn">
         
-        <div class="p-4 bg-gradient-to-r from-emerald-900/40 to-cyan-900/40 border-b border-gray-800 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <div>
-                    <h5 class="text-xs font-black uppercase text-white tracking-wider">AgroMeteo Copilot</h5>
-                    <span class="text-[9px] text-gray-400 font-sans block leading-none mt-0.5">Gemini 2.5 Field Intelligence</span>
-                </div>
-            </div>
-            <button @click="toggleChat" class="text-gray-500 hover:text-white transition-colors">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-        </div>
 
-        <div ref="chatContainer" id="chat-scroll-container" class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
-            <div v-for="(msg, index) in chatMessages" :key="index" 
-                 :class="['flex flex-col max-w-[85%] rounded-xl p-3 text-xs font-sans leading-relaxed shadow-sm', 
-                    msg.sender === 'user' ? 'bg-emerald-600 border border-emerald-500 text-white self-end rounded-br-none' : 'bg-gray-900 border border-gray-800 text-gray-200 self-start rounded-bl-none']">
-                {{ msg.text }}
-            </div>
-
-            <div v-if="isChatTyping" class="bg-gray-900 border border-gray-800 text-gray-400 self-start rounded-xl rounded-bl-none p-3 max-w-[85%] flex items-center gap-1.5 shadow-sm">
-                <span class="text-[10px] font-mono uppercase tracking-widest opacity-60 mr-1">Parsing Matrix</span>
-                <div class="flex gap-1 items-center justify-center pt-0.5">
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                    <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="px-3 pb-2 pt-1 flex flex-wrap gap-1.5 border-t border-gray-900/50 bg-[#070a10]">
-            <button @click="setChatPreset('Can I plant maize this week?')" class="text-[10px] text-cyan-400/80 bg-cyan-950/30 border border-cyan-900/40 rounded-md px-2 py-1 hover:border-cyan-500/40 transition-colors">🌾 Maize?</button>
-            <button @click="setChatPreset('Will rainfall affect tomatoes?')" class="text-[10px] text-amber-400/80 bg-amber-950/30 border border-amber-900/40 rounded-md px-2 py-1 hover:border-amber-500/40 transition-colors">🍅 Tomatoes?</button>
-            <button @click="setChatPreset('When should irrigation start?')" class="text-[10px] text-emerald-400/80 bg-emerald-950/30 border border-emerald-900/40 rounded-md px-2 py-1 hover:border-emerald-500/40 transition-colors">💧 Irrigation?</button>
-        </div>
-
-        <form @submit.prevent="sendChatMessage" class="p-2 bg-[#06090f] border-t border-gray-800/80 flex gap-1">
-            <input v-model="chatMessage" type="text" placeholder="Consult agronomy intelligence matrix..." 
-                   class="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-sans transition-all" />
-            <button type="submit" :disabled="isChatTyping" class="bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 disabled:opacity-40 text-white rounded-lg px-3 text-xs transition-colors shadow-md">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </form>
-    </div>
-
-    <button @click="toggleChat" :class="['w-12 h-12 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border', 
-        isChatOpen ? 'bg-red-600 border-red-500 rotate-90' : 'bg-emerald-600 border-emerald-500']">
-        <i v-if="isChatOpen" class="fa-solid fa-xmark text-base"></i>
-        <i v-else class="fa-solid fa-robot text-base animate-pulse"></i>
+        <!--footer display on mobile devices-->
+<footer class="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-2 flex items-center justify-around shadow-2xl mobile-footer">
+    <button 
+        @click="setActiveTab('weather')" 
+        :class="['mobile-nav-btn flex flex-col items-center gap-1 p-3 text-xs transition-all duration-200 rounded-xl', activeTab === 'weather' ? 'mobile-nav-active text-emerald-400' : 'text-gray-400 hover:text-gray-300']"
+    >
+        <i class="fa-solid fa-satellite-dish text-xl"></i>
+        <span class="text-[10px] font-mono font-medium">Weather</span>
     </button>
-</div>
--->
+    
+    <button 
+        @click="setActiveTab('alerts')" 
+        :class="['mobile-nav-btn flex flex-col items-center gap-1 p-3 text-xs transition-all duration-200 rounded-xl', activeTab === 'alerts' ? 'mobile-nav-active text-emerald-400' : 'text-gray-400 hover:text-gray-300']"
+    >
+        <i class="fa-solid fa-bell text-xl"></i>
+        <span class="text-[10px] font-mono font-medium">Alerts</span>
+    </button>
+    
+    <button 
+        @click="setActiveTab('reports')" 
+        :class="['mobile-nav-btn flex flex-col items-center gap-1 p-3 text-xs transition-all duration-200 rounded-xl', activeTab === 'reports' ? 'mobile-nav-active text-emerald-400' : 'text-gray-400 hover:text-gray-300']"
+    >
+        <i class="fa-solid fa-brain text-xl"></i>
+        <span class="text-[10px] font-mono font-medium">AI Advisory</span>
+    </button>
+
+    <button @click="setActiveTab('diseases')" :class="['mobile-nav-btn flex flex-col items-center gap-1 p-3 text-xs transition-all duration-200 rounded-xl', activeTab === 'diseases' ? 'mobile-nav-active text-emerald-400' : 'text-gray-400 hover:text-gray-300']">
+        <i class="fa-solid fa-virus text-xl"></i>
+        <span class="text-[10px] font-mono font-medium">Disease</span>
+    </button>
+</footer>
+
+</div><!-- End of #app -->
+
+
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="app.js"></script>

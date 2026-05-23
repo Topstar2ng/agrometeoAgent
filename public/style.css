@@ -1,26 +1,308 @@
 /* Keeps any element with the v-cloak attribute hidden until Vue mounts */
-    [v-cloak] {
-        display: none !important;
+[v-cloak] {
+    display: none !important;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #060913;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.glass-card {
+    background: rgba(13, 20, 38, 0.45);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-overlay {
+    background: rgba(4, 6, 14, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+
+::-webkit-scrollbar-track { 
+    background: #060913; 
+}
+
+::-webkit-scrollbar-thumb { 
+    background: #1f293d; 
+    border-radius: 3px; 
+}
+
+::-webkit-scrollbar-thumb:hover { 
+    background: #10b981; 
+}
+
+/* DESKTOP MENU ACTIVE STATE - Left border with neon green glow and fade to right */
+.active-nav {
+    position: relative;
+    background: linear-gradient(90deg, 
+        rgba(16, 185, 129, 0.15) 0%, 
+        rgba(16, 185, 129, 0.08) 30%,
+        rgba(12, 21, 52, 0.02) 70%,
+    
+        transparent 100%
+    );
+    border-left: 3px solid #10b981;
+    color: #10b981 !important;
+    box-shadow: -2px 0 12px rgba(16, 185, 129, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* Glow effect animation for the border */
+.active-nav::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, 
+        #10b981 0%, 
+        #06b6d4 50%, 
+        #10b981 100%
+    );
+    box-shadow: 0 0 8px #10b981, 0 0 12px rgba(16, 185, 129, 0.5);
+    animation: borderGlow 2s ease-in-out infinite;
+}
+
+/* Add a subtle text glow for active item */
+.active-nav i,
+.active-nav span {
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Hover effect for desktop menu items */
+.nav-item {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-item:hover {
+    background: rgba(16, 185, 129, 0.05);
+    color: #10b981;
+    transform: translateX(4px);
+}
+
+/* Keyframe animation for the glowing border */
+@keyframes borderGlow {
+    0%, 100% {
+        opacity: 0.8;
+        box-shadow: 0 0 4px #10b981, 0 0 8px rgba(16, 185, 129, 0.3);
     }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 12px #10b981, 0 0 16px rgba(16, 185, 129, 0.6);
+    }
+}
+
+/* Mobile Footer Navigation Styling */
+.mobile-nav-btn {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.mobile-nav-btn:active {
+    transform: scale(0.95);
+}
+
+/* Active state for mobile menu items */
+.mobile-nav-active {
+    color: #10b981 !important;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.mobile-nav-active i {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+/* Add a subtle indicator for active tab on mobile */
+.mobile-nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, #10b981, #06b6d4);
+    border-radius: 2px;
+}
+
+/* Hover effects for mobile menu */
+.mobile-nav-btn:hover {
+    color: rgba(16, 185, 129, 0.8);
+    transform: translateY(-1px);
+}
+
+/* Footer container styling */
+.mobile-footer {
+    background: rgba(9, 13, 31, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+/* Safe area inset for modern mobile devices (notch support) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-footer {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* Layout Fixes */
+/* Add padding to main content on mobile to account for fixed footer */
+@media (max-width: 1023px) {
+    main {
+        padding-bottom: 80px !important;
+    }
+}
+
+/* Ensure the main content area is scrollable */
+#app {
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Fix for mobile viewport */
+@media (max-width: 768px) {
     body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #060913;
-        }
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .glass-card {
-            background: rgba(13, 20, 38, 0.45);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .glass-overlay {
-            background: rgba(4, 6, 14, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #060913; }
-        ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    #app {
+        height: 100%;
+    }
+}
+
+/* Animation for tab switching */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 640px) {
+    .glass-card {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+    
+    /* Improve touch targets for mobile */
+    button, 
+    .mobile-nav-btn,
+    [role="button"] {
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Prevent text selection on double-tap */
+    .mobile-nav-btn {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+}
+
+/* Dark mode enhancements for mobile */
+@media (prefers-color-scheme: dark) {
+    .mobile-footer {
+        background: rgba(9, 13, 31, 0.98);
+    }
+}
+
+/* Optional: Add a subtle glow to active icon */
+.fa-solid, .fa-regular {
+    transition: all 0.2s ease;
+}
+
+.mobile-nav-active .fa-solid,
+.mobile-nav-active .fa-regular {
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
+}
+
+/* Leaflet Map Custom Styling */
+#map-pane {
+    background: #060913;
+}
+
+.leaflet-container {
+    background: #060913;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.leaflet-popup-content-wrapper {
+    background: rgba(13, 20, 38, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    color: white;
+}
+
+.leaflet-popup-tip {
+    background: rgba(13, 20, 38, 0.95);
+    border-top: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.custom-marker {
+    background: transparent;
+}
+
+/* Layer animations */
+.rainfall-layer {
+    animation: pulse 2s infinite;
+}
+
+.temperature-layer {
+    transition: fill-opacity 0.5s ease;
+}
+
+.wind-layer {
+    animation: rotate 10s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Map control buttons */
+.map-layer-btn {
+    transition: all 0.2s ease;
+}
+
+.map-layer-btn:hover {
+    transform: scale(1.05);
+}
+
+.map-layer-btn:active {
+    transform: scale(0.95);
+}
