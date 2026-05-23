@@ -2,7 +2,9 @@
 [v-cloak] {
     display: none !important;
 }
-
+html {
+        font-size: 112.5%; /* Increases base font size (16px -> 18px) */
+    }
 body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #060913;
