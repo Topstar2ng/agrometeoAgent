@@ -44,10 +44,10 @@ const aiCache = new nodeCache({ stdTTL: 300 });
 // ==========================================
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'agrometeo_db',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '', 
+    database: process.env.DB_NAME || 'agrometeo_db',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -293,6 +293,6 @@ app.get(/.*/, (req, res) => {
 
 app.listen(SERVER_PORT, () => {
     console.log(`\n==================================================`);
-    console.log(`🤖 AgriClimate Core Orchestrator Operational`);
+    console.log(`🤖 AgroMeteo Agent online on port ${SERVER_PORT}!`);
     console.log(`==================================================\n`);
 });

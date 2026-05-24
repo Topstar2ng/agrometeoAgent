@@ -121,6 +121,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <div class="flex items-center gap-3">
+                            <!-- Online/Offline Status Indicator -->
                             <div :class="['px-3 py-1 text-xs font-bold rounded-full mono-font transition-all', isOnline ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse']">
                                 <i :class="['fa-solid me-1.5', isOnline ? 'fa-circle-check' : 'fa-circle-xmark']"></i>
                                 {{ isOnline ? 'ONLINE' : 'OFFLINE' }}
@@ -135,8 +136,9 @@
                         </p>
                     </div>
 
+        
                     <!-- Offline Banner -->
-                    <div v-if="showOfflineBanner && !isOnline" class="fixed top-0 left-0 right-0 z-50 bg-red-500/90 backdrop-blur-md border-b border-red-400/30 shadow-lg">
+                    <div v-if="!isOnline" class="fixed top-0 left-0 right-0 z-50 bg-red-500/90 backdrop-blur-md border-b border-red-400/30 shadow-lg">
                         <div class="container mx-auto px-4 py-2.5 flex items-center justify-center gap-3">
                             <i class="fa-solid fa-wifi-slash text-white text-sm animate-pulse"></i>
                             <p class="text-white text-xs font-mono font-bold uppercase tracking-wider">
@@ -684,6 +686,32 @@
         </div>
         
 
+<!-- Add this after your main content but before the footer -->
+<!-- Mobile Auth Button (Floating Action Button) -->
+<div class="lg:hidden fixed bottom-20 right-4 z-50">
+    <button v-if="!isAuthenticated" @click="showAuthModal = true" 
+        class="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 transition-transform duration-200">
+        <i class="fa-solid fa-user text-slate-950 text-lg"></i>
+    </button>
+    <div v-else class="relative group">
+        <button @click="toggleMobileUserMenu" 
+            class="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 transition-transform duration-200">
+            <span class="text-slate-950 font-mono font-bold text-sm">
+                {{ currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'U' }}
+            </span>
+        </button>
+        <!-- Mobile User Menu Dropup -->
+        <div v-if="showMobileUserMenu" class="absolute bottom-14 right-0 mb-2 w-48 bg-[#0d1426] border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
+            <div class="p-3 border-b border-gray-800">
+                <p class="text-xs font-bold text-white">{{ currentUser.name }}</p>
+                <p class="text-[10px] text-gray-400 font-mono">{{ currentUser.email }}</p>
+            </div>
+            <button @click="logoutSession" class="w-full text-left p-3 text-xs text-red-400 hover:bg-red-500/10 font-mono transition flex items-center gap-2">
+                <i class="fa-solid fa-power-off"></i> Disconnect Session
+            </button>
+        </div>
+    </div>
+</div>
         <!-- Mobile Navigation Footer -->
 <footer class="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-2 flex items-center justify-around shadow-2xl mobile-footer">
     <button 
@@ -717,7 +745,27 @@
 </footer>
 
 </div><!-- End of #app -->
-    
+
+<!-- Designer Credit -->
+
+<div class="fixed bottom-20 lg:bottom-40 left-4 z-50">
+    <a href="https://portfolio.tecspectratechnologies.com/" 
+       target="_blank" 
+       rel="noopener noreferrer"
+       class="designer-credit group flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0d1426]/90 backdrop-blur-md border border-gray-800 hover:border-emerald-500/30 transition-all duration-300 shadow-lg hover:shadow-emerald-500/10">
+        <div class="relative">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center">
+                <i class="fa-solid fa-crown text-[10px] text-slate-950"></i>
+            </div>
+        </div>
+        <div class="text-left">
+            <p class="text-[8px] font-mono text-gray-500 group-hover:text-emerald-400 transition">CREATED BY</p>
+            <p class="text-[10px] font-mono font-bold text-white group-hover:text-emerald-400 transition leading-tight">Temitope O.</p>
+        </div>
+        <i class="fa-solid fa-up-right-from-square text-[8px] text-gray-500 group-hover:text-emerald-400 transition ml-1"></i>
+    </a>
+</div>
+
     <!-- Core Scripts -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="app.js"></script>

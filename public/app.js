@@ -47,6 +47,28 @@ createApp({
         const registeredUsersStore = ref([
             { name: 'Chief Operator Admin', email: 'admin@agriclimate.io', password: 'password123' }
         ]);
+
+        // Mobile user menu state
+        const showMobileUserMenu = ref(false);
+
+        const toggleMobileUserMenu = () => {
+            event.stopPropagation(); // Prevent event bubbling
+            showMobileUserMenu.value = !showMobileUserMenu.value;
+        };
+
+        // Close menu when clicking outside
+        const closeMobileUserMenu = () => {
+            showMobileUserMenu.value = false;
+        };
+
+        // Add event listener for clicks outside the mobile user menu
+        const handleClickOutside = (event) => {
+            const userMenu = document.querySelector('.mobile-user-menu');
+            if (userMenu && !userMenu.contains(event.target) && showMobileUserMenu.value) {
+                showMobileUserMenu.value = false;
+            }
+        };
+
         
         // Non-reactive instances for performance
         let chartInstance = null;
@@ -1048,7 +1070,9 @@ createApp({
         onMounted(async () => {
             window.addEventListener('online', handleOnline);
             window.addEventListener('offline', handleOffline);
-            
+            // Close mobile user menu when clicking outside (for better UX on small screens)
+            document.addEventListener('click', closeMobileUserMenu);
+
             updateNetworkState();
             initConnectionMonitoring();
             updateConnectionQuality();
@@ -1060,7 +1084,7 @@ createApp({
                 activeTab.value = savedTab;
             }
             
-            await detectLiveLocation();
+            detectLiveLocation();
             
             if (activeTab.value === 'weather') {
                 setTimeout(() => {
@@ -1074,6 +1098,10 @@ createApp({
         onUnmounted(() => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+
+            // Clean up mobile menu listener
+            document.removeEventListener('click', closeMobileUserMenu);
+
             cleanupConnectionMonitoring();
             if (mapInstance) {
                 mapInstance.remove();
@@ -1085,7 +1113,7 @@ createApp({
         // 12. EXPOSED INTERFACE
         // ==========================================
         return {
-            activeTab, setActiveTab, locationMode, liveCoords, manualCoords, selectedLocationIndex, 
+            activeTab, setActiveTab, locationMode, liveCoords, manualCoords, selectedLocationIndex, showMobileUserMenu, toggleMobileUserMenu,
             activeCoordinates, activeLatLonString, activeLocationName, activeView, weatherData, 
             loading, error, showAuthModal, authMode, isAuthenticated, currentUser, authForm, 
             authMessage, authLoading, executeAuthSubmit, closeAuthWorkspace, logoutSession, switchEngineView, 
