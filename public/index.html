@@ -17,7 +17,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS (generated) -->
     <link href="style.css" rel="stylesheet">
+    
+    <!-- Your Custom CSS (overrides Tailwind) -->
+    <link href="custom.css" rel="stylesheet">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
@@ -192,11 +196,17 @@
                             </button>
                         </div>
 
-                        <!-- Sector Group Mode -->
+                        <!-- Sector Group Mode - More robust version -->
                         <div v-if="locationMode === 'sector'" class="flex items-center gap-3">
-                            <select v-model="selectedLocationIndex" @change="handleSectorChange" class="bg-[#060913] text-xs font-mono text-white border border-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 transition">
+                        <label class="text-xs font-mono text-gray-400">Select Agricultural Sector:</label>
+                            <select 
+                                v-model="selectedLocationIndex" 
+                                @change="handleSectorChange" 
+                                class="bg-[#060913] text-xs font-mono text-white border border-gray-800 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 transition min-w-[280px]"
+                            >
+                                <option value="" disabled>Select a sector...</option>
                                 <option v-for="(loc, idx) in targetLocations" :key="idx" :value="idx">
-                                    {{ loc.name }} ({{ loc.cropFocus }})
+                                    {{ loc.name }} - {{ loc.cropFocus }}
                                 </option>
                             </select>
                         </div>
@@ -368,10 +378,12 @@
                         </div>
                     </div>
                 </div>
+                <!-- Spacer for mobile -->
+                <div class="h-20 lg:h-0"></div>
             </div>
 
             <!-- Tab: Alert System -->
-            <div v-show="activeTab === 'alerts'" class="space-y-4 font-mono">
+            <div v-show="activeTab === 'alerts'" class="space-y-6 font-mono">
     
                 <div class="flex items-center justify-between border-b border-gray-800 pb-3">
                     <div>
@@ -407,13 +419,14 @@
                                 alert.type === 'critical' || alert.type === 'danger' ? 'text-red-400' : 'text-amber-400']">
                                 {{ alert.title }}
                             </h4>
-                            <p class="text-[11px] text-gray-300 font-sans leading-relaxed">
+                            <p class="text-[13px] text-gray-300 font-sans leading-relaxed">
                                 {{ alert.message }}
                             </p>
                         </div>
                     </div>
                 </div>
-
+                <!-- Spacer for mobile -->
+                <div class="h-20 lg:h-0"></div>
             </div>
 
             <!-- Tab: AI Crop Advisory -->
@@ -427,42 +440,74 @@
                             <p class="text-[11px] text-gray-500 font-mono mt-0.5">Synthesizing live matrix data into dynamic crop intelligence parameters.</p>
                         </div>
                         
-                        <div class="flex items-center gap-3 w-full md:w-auto font-mono text-xs">
-                            <span class="text-gray-400 uppercase text-[10px]">Matrix Focus:</span>
-                            <select v-model="cropSelection" class="bg-[#060913] text-white border border-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
-                                <option value="Maize">Maize (Corn Plot)</option>
-                                <option value="Rice">Rice (Lowland Paddy)</option>
-                                <option value="Wheat">Wheat (Grain Canopy)</option>
-                                <option value="Cassava">Cassava (Root Crop)</option>
-                                <option value="Vegetables">Leafy Vegetables</option>
-                                <option value="Tomato">Tomato (Solanaceous)</option>
-                                <option value="Cocoa">Cocoa (Cash Crop)</option>
-                                <option value="Yam">Yam (Tuber)</option>
-                                <option value="Sorghum">Sorghum (Drought-Resistant)</option>
-                                <option value="Groundnut">Groundnut (Legume)</option>
-                                <option value="Sugarcane">Sugarcane (Biofuel Crop)</option>
-                            </select>
+                        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto font-mono text-xs">
+                            <!-- Language Selector -->
+                            <div class="relative">
+                                <select v-model="selectedLanguage" 
+                                    class="bg-[#060913] text-white border border-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition appearance-none pr-8">
+                                    <option v-for="lang in availableLanguages" :key="lang.code" :value="lang.code">
+                                        {{ lang.flag }} {{ lang.nativeName }}
+                                    </option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-gray-500 pointer-events-none"></i>
+                            </div>
+                            
+                            <!-- Crop Selector -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 uppercase text-[10px]">Matrix Focus:</span>
+                                <select v-model="cropSelection" class="bg-[#060913] text-white border border-gray-800 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition">
+                                    <option value="Maize">🌽 Maize (Corn Plot)</option>
+                                    <option value="Rice">🌾 Rice (Lowland Paddy)</option>
+                                    <option value="Wheat">🌾 Wheat (Grain Canopy)</option>
+                                    <option value="Cassava">🍠 Cassava (Root Crop)</option>
+                                    <option value="Vegetables">🥬 Leafy Vegetables</option>
+                                    <option value="Tomato">🍅 Tomato (Solanaceous)</option>
+                                    <option value="Cocoa">🍫 Cocoa (Cash Crop)</option>
+                                    <option value="Yam">🍠 Yam (Tuber)</option>
+                                    <option value="Sorghum">🌾 Sorghum (Drought-Resistant)</option>
+                                    <option value="Groundnut">🥜 Groundnut (Legume)</option>
+                                    <option value="Sugarcane">🎋 Sugarcane (Biofuel Crop)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <button @click="generateFarmAIInsight" :disabled="generatingReport" class="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-extrabold font-mono text-xs uppercase py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 hover:opacity-90 disabled:opacity-50">
-                        <i :class="['fa-solid', generatingReport ? 'fa-spinner animate-spin' : 'fa-wand-magic-sparkles']"></i>
-                        {{ generatingReport ? 'Compiling Environmental Intelligence...' : 'Execute AI Diagnostic Analysis' }}
-                    </button>
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button @click="generateFarmAIInsight" :disabled="generatingReport" 
+                            class="flex-1 bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-extrabold font-mono text-xs uppercase py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 hover:opacity-90 disabled:opacity-50">
+                            <i :class="['fa-solid', generatingReport ? 'fa-spinner animate-spin' : 'fa-wand-magic-sparkles']"></i>
+                            {{ generatingReport ? 'Compiling Environmental Intelligence...' : 'Execute AI Diagnostic Analysis' }}
+                        </button>
+                        
+                        <!-- Play Button - Only visible when report exists -->
+                        <button v-if="aiReport && !generatingReport" 
+                            @click="isSpeaking ? stopSpeaking() : speakAdvisory(aiReport.currentSituation + ' ' + aiReport.futureTip)"
+                            :class="['px-6 py-3.5 rounded-xl font-extrabold font-mono text-xs uppercase transition flex items-center justify-center gap-2', 
+                                isSpeaking ? 'bg-red-500/20 border border-red-500/30 text-red-400' : 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30']">
+                            <i :class="['fa-solid', isSpeaking ? 'fa-stop' : 'fa-play']"></i>
+                            {{ isSpeaking ? 'Stop Reading' : 'Read Advisory' }}
+                        </button>
+                    </div>
+                    <!-- Spacer for mobile -->
+                    <div class="h-20 lg:h-0"></div>
                 </div>
 
+                <!-- AI Report Display -->
                 <div v-if="aiReport && !generatingReport" class="space-y-6 transition-all duration-500 transform translate-y-0 opacity-100 font-mono">
-    
-                    <!-- Risk Status Banner -->
-                    <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl', 
+
+                    <!-- Status Header with Play Icon -->
+                    <div :class="['p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl relative', 
                         aiReport.overallRisk === 'HIGH' || aiReport.overallRisk === 'CRITICAL' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200']">
-                        <div>
+                        
+                        <div class="flex-1">
                             <span class="text-[10px] tracking-widest uppercase opacity-60 block mb-1">Live Engine Critique</span>
                             <h4 class="text-sm font-black uppercase flex items-center gap-2">
                                 <i class="fa-solid fa-triangle-exclamation"></i> {{ aiReport.statusTitle }}
                             </h4>
                             <p class="text-xs mt-1 text-gray-300 font-sans leading-relaxed">{{ aiReport.currentSituation }}</p>
                         </div>
+                        
                         <div class="shrink-0 text-center px-4 py-2 bg-black/40 border border-white/5 rounded-xl">
                             <span class="text-[9px] uppercase tracking-wider block opacity-50">Risk Index</span>
                             <span class="text-sm font-black tracking-widest uppercase" :class="aiReport.overallRisk === 'HIGH' || aiReport.overallRisk === 'CRITICAL' ? 'text-red-400' : 'text-emerald-400'">
@@ -471,7 +516,7 @@
                         </div>
                     </div>
 
-                    <!-- Key Performance Indicators -->
+                    <!-- Metrics Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-[#0b1120] border border-gray-800 rounded-xl p-4 shadow-lg">
                             <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Planting Status</div>
@@ -481,9 +526,8 @@
                         </div>
                         
                         <div :class="['border rounded-xl p-4 shadow-lg transition-all duration-300', 
-    aiReport.metrics.irrigation === 'CRITICAL' || aiReport.metrics.irrigation === 'URGENT' 
-    ? 'bg-cyan-950/40 border-cyan-500/40' 
-    : 'bg-[#0b1120] border-gray-800']">
+                            aiReport.metrics.irrigation === 'CRITICAL' || aiReport.metrics.irrigation === 'URGENT' 
+                            ? 'bg-cyan-950/40 border-cyan-500/40' : 'bg-[#0b1120] border-gray-800']">
                             <div class="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Irrigation Urgency</div>
                             <div class="text-base font-black uppercase tracking-wide animate-pulse" 
                                 :class="aiReport.metrics.irrigation === 'CRITICAL' || aiReport.metrics.irrigation === 'URGENT' ? 'text-cyan-400' : 'text-gray-400'">
@@ -500,10 +544,9 @@
                         </div>
                     </div>
 
-                    <!-- Action Protocols -->
+                    <!-- DOs and DON'Ts -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        <!-- DOs -->
                         <div class="bg-[#071311] border border-emerald-500/20 rounded-2xl p-5 shadow-xl space-y-4">
                             <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest border-b border-emerald-500/10 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-circle-check"></i> Recommended Field Actions (DO)
@@ -516,7 +559,6 @@
                             </div>
                         </div>
 
-                        <!-- DONTs -->
                         <div class="bg-[#140b0f] border border-red-500/20 rounded-2xl p-5 shadow-xl space-y-4">
                             <div class="text-xs font-bold text-red-400 uppercase tracking-widest border-b border-red-500/10 pb-2 flex items-center gap-2">
                                 <i class="fa-solid fa-circle-xmark"></i> Critical Restrictions (DON'T)
@@ -531,7 +573,7 @@
 
                     </div>
 
-                    <!-- AI Tip -->
+                    <!-- Future Tip with Translation note -->
                     <div class="bg-gradient-to-r from-cyan-950/20 to-emerald-950/20 border border-gray-800 rounded-xl p-4 flex items-start gap-3 shadow-md">
                         <i class="fa-solid fa-lightbulb text-cyan-400 text-sm mt-0.5 shrink-0"></i>
                         <div>
@@ -539,7 +581,13 @@
                             <p class="text-xs text-gray-400 font-sans mt-0.5 leading-relaxed">{{ aiReport.futureTip }}</p>
                         </div>
                     </div>
-
+                    
+                    <!-- Language Info Badge -->
+                    <div v-if="selectedLanguage !== 'en'" class="text-center">
+                        <span class="text-[9px] font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full">
+                            <i class="fa-solid fa-language me-1"></i> Translated to {{ availableLanguages.find(l => l.code === selectedLanguage)?.nativeName }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -623,6 +671,8 @@
                         </div>
                     </div>
                 </div>
+                <!-- Spacer for mobile -->
+                <div class="h-20 lg:h-0"></div>
             </div>
 
         </main>
@@ -744,6 +794,9 @@
     </button>
 </footer>
 
+<!-- Multi-Language Selector 
+<div id="multilang"></div>
+-->
 </div><!-- End of #app -->
 
 <!-- Designer Credit -->
@@ -765,6 +818,23 @@
         <i class="fa-solid fa-up-right-from-square text-[8px] text-gray-500 group-hover:text-emerald-400 transition ml-1"></i>
     </a>
 </div>
+
+
+<script src="https://unpkg.com/google-translate-pure-js/js/multilang.js"></script>
+<script>
+    /*
+  initMultiLang({
+    pageLanguage: "en",
+    languages: [
+      { code: "en", name: "English", flag: "🇬🇧" },
+      { code: "hi", name: "हिंदी", flag: "🇮🇳" },
+      { code: "fr", name: "Français", flag: "🇫🇷" },
+      { code: "es", name: "Español", flag: "🇪🇸" },
+      { code: "zh", name: "中文", flag: "🇨🇳" }
+    ]
+  });
+  */
+</script>
 
     <!-- Core Scripts -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>

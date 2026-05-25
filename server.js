@@ -105,7 +105,7 @@ apiRouter.post('/consult', async (req, res) => {
 
         // Execute AI Generation
         const modelInstance = aiEngine.getGenerativeModel({ 
-            model: "gemini-1.5-flash", // Updated to stable flash model
+            model: "gemini-3.5-flash", // Updated to stable flash model
             generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
         });
 
@@ -151,7 +151,7 @@ apiRouter.post('/chat', async (req, res) => {
             CRITICAL DIRECTIVE: Answer the question clearly, concisely (max 3-4 sentences), and link it directly to their current weather values if relevant. Do not output markdown lists, titles, or JSON structures. Keep it looking like a natural text message conversation from a helpful human advisor.
         `;
 
-        const modelInstance = aiEngine.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const modelInstance = aiEngine.getGenerativeModel({ model: "gemini-3.5-flash" });
         const chatResult = await modelInstance.generateContent(chatPrompt);
         
         res.json({ reply: chatResult.response.text() });

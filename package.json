@@ -1,25 +1,25 @@
 {
-  "name": "agrometeoagent",
+  "name": "agrometeo-agent",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI-powered AgroMeteo Agent",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./public/style.css --watch",
+    "start": "node server.js",
+    "dev": "concurrently \"npm run watch:css\" \"nodemon server.js\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@google/genai": "^2.5.0",
     "@google/generative-ai": "^0.24.1",
-    "axios": "^1.16.1",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.3",
-    "node-cache": "^5.1.2"
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^9.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.2",
+    "node-cache": "^5.1.2",
+    "nodemon": "^3.1.10",
+    "tailwindcss": "^3.4.10"
   }
 }

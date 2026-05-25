@@ -28,10 +28,28 @@ createApp({
             heatIndex: false,
             soilMoisture: false
         });
+
+        // NEW LOCATION METHOD STATE DECLARATIONS
+        const locationMode = ref('auto'); // Options: 'auto' | 'manual' | 'sector'
         
-        const locationMode = ref('auto');
-        const liveCoords = ref({ lat: 9.0765, lon: 7.3986 });
-        const manualCoords = ref({ lat: 6.5244, lon: 3.3792 });
+        const liveCoords = ref({ lat: 12.0542, lon: 8.5413 }); // Defaults to Kano context
+        const manualCoords = ref({ lat: 12.0542, lon: 8.5413 }); // Defaults to Kano context
+        
+        const targetLocations = ref([
+            { name: 'Oyo Sector Zone Alpha', lat: 7.3775, lon: 3.9470, cropFocus: 'Maize Seeding Matrix' },
+            { name: 'Kaduna Sector Zone Beta', lat: 10.5105, lon: 7.4168, cropFocus: 'Cereal Grain Hub' },
+            { name: 'Benue Crop Valley Perimeter', lat: 7.7337, lon: 8.5214, cropFocus: 'Root Crop System' }
+        ]);
+
+        // Debug logs for location state
+        console.log('Target Locations:', targetLocations.value);
+        console.log('Target Locations length:', targetLocations.value.length);
+
+        const debugLocationMode = computed(() => {
+            console.log('Current locationMode:', locationMode.value);
+            return locationMode.value;
+        });
+        
         const selectedLocationIndex = ref(0);
         const activeView = ref('7day');
         const weatherData = ref(null);
@@ -70,11 +88,20 @@ createApp({
         };
 
         
+
+        
         // Non-reactive instances for performance
         let chartInstance = null;
         let mapInstance = null;
         let mapMarker = null;
-        let activeLayers = {};
+        let activeLayers = {
+            rainfall: null,
+            temperature: null,
+            wind: null,
+            vegetation: null,
+            heatIndex: null,
+            soilMoisture: null
+        };
 
         // ==========================================
         // 2. COMPUTED PROPERTIES (LOGIC DERIVATION)
@@ -83,6 +110,9 @@ createApp({
         const activeCoordinates = computed(() => {
             if (locationMode.value === 'manual') {
                 return { lat: manualCoords.value.lat, lon: manualCoords.value.lon };
+            } else if (locationMode.value === 'sector') {
+                const sector = targetLocations.value[selectedLocationIndex.value];
+                return { lat: sector.lat, lon: sector.lon };
             }
             return { lat: liveCoords.value.lat, lon: liveCoords.value.lon };
         });
@@ -136,59 +166,79 @@ createApp({
             
             // Calculate heat index
             const heatIndex = calculateHeatIndex(temp, humidity);
-            // Update or create layers based on active toggles
-            if (activeMapLayers.value.rainfall && !activeLayers.rainfall) {
-                activeLayers.rainfall = createRainfallLayer(lat, lon, rainfall);
-                activeLayers.rainfall.addTo(mapInstance);
-            } else if (!activeMapLayers.value.rainfall && activeLayers.rainfall) {
+            
+            // Remove existing layers if they exist
+            if (activeLayers.rainfall) {
                 mapInstance.removeLayer(activeLayers.rainfall);
                 activeLayers.rainfall = null;
             }
-            
-            if (activeMapLayers.value.temperature && !activeLayers.temperature) {
-                activeLayers.temperature = createTemperatureLayer(lat, lon, temp);
-                activeLayers.temperature.addTo(mapInstance);
-            } else if (!activeMapLayers.value.temperature && activeLayers.temperature) {
+            if (activeLayers.temperature) {
                 mapInstance.removeLayer(activeLayers.temperature);
                 activeLayers.temperature = null;
             }
-            
-            if (activeMapLayers.value.wind && !activeLayers.wind) {
-                activeLayers.wind = createWindLayer(lat, lon, windSpeed);
-                activeLayers.wind.addTo(mapInstance);
-            } else if (!activeMapLayers.value.wind && activeLayers.wind) {
+            if (activeLayers.wind) {
                 mapInstance.removeLayer(activeLayers.wind);
                 activeLayers.wind = null;
             }
-            
-            if (activeMapLayers.value.vegetation && !activeLayers.vegetation) {
-                activeLayers.vegetation = createVegetationLayer(lat, lon);
-                activeLayers.vegetation.addTo(mapInstance);
-            } else if (!activeMapLayers.value.vegetation && activeLayers.vegetation) {
+            if (activeLayers.vegetation) {
                 mapInstance.removeLayer(activeLayers.vegetation);
                 activeLayers.vegetation = null;
             }
-            
-            if (activeMapLayers.value.heatIndex && !activeLayers.heatIndex) {
-                activeLayers.heatIndex = createHeatIndexLayer(lat, lon, heatIndex);
-                activeLayers.heatIndex.addTo(mapInstance);
-            } else if (!activeMapLayers.value.heatIndex && activeLayers.heatIndex) {
+            if (activeLayers.heatIndex) {
                 mapInstance.removeLayer(activeLayers.heatIndex);
                 activeLayers.heatIndex = null;
             }
-            
-            if (activeMapLayers.value.soilMoisture && !activeLayers.soilMoisture) {
-                activeLayers.soilMoisture = createSoilMoistureLayer(lat, lon);
-                activeLayers.soilMoisture.addTo(mapInstance);
-            } else if (!activeMapLayers.value.soilMoisture && activeLayers.soilMoisture) {
+            if (activeLayers.soilMoisture) {
                 mapInstance.removeLayer(activeLayers.soilMoisture);
                 activeLayers.soilMoisture = null;
             }
+            
+            // Add layers based on active toggles
+            if (activeMapLayers.value.rainfall) {
+                activeLayers.rainfall = createRainfallLayer(lat, lon, rainfall);
+                activeLayers.rainfall.addTo(mapInstance);
+            }
+            
+            if (activeMapLayers.value.temperature) {
+                activeLayers.temperature = createTemperatureLayer(lat, lon, temp);
+                activeLayers.temperature.addTo(mapInstance);
+            }
+            
+            if (activeMapLayers.value.wind) {
+                activeLayers.wind = createWindLayer(lat, lon, windSpeed);
+                activeLayers.wind.addTo(mapInstance);
+            }
+            
+            if (activeMapLayers.value.vegetation) {
+                activeLayers.vegetation = createVegetationLayer(lat, lon);
+                activeLayers.vegetation.addTo(mapInstance);
+            }
+            
+            if (activeMapLayers.value.heatIndex) {
+                activeLayers.heatIndex = createHeatIndexLayer(lat, lon, heatIndex);
+                activeLayers.heatIndex.addTo(mapInstance);
+            }
+            
+            if (activeMapLayers.value.soilMoisture) {
+                activeLayers.soilMoisture = createSoilMoistureLayer(lat, lon);
+                activeLayers.soilMoisture.addTo(mapInstance);
+            }
         };
 
+        // Helper function to calculate heat index
         const calculateHeatIndex = (temp, humidity) => {
             // Simplified heat index calculation
-            return temp + (humidity / 100) * 5;
+            // Using the Rothfusz regression (Formula requires Fahrenheit)
+            const T = (temp * 9/5) + 32;
+            const R = humidity;
+            let hi = 0.5 * (T + 61.0 + ((T - 68.0) * 1.2) + (R * 0.094));
+            
+            if (hi >= 80) {
+                hi = -42.379 + 2.04901523 * T + 10.14333127 * R - 0.22475541 * T * R - 6.83783e-3 * T * T - 5.481717e-2 * R * R + 1.22874e-3 * T * T * R + 8.5282e-4 * T * R * R - 1.99e-6 * T * T * R * R;
+            }
+            
+            // Convert back to Celsius for the UI
+            return Math.round((hi - 32) * 5/9);
         };
 
         const createRainfallLayer = (lat, lon, rainfall) => {
@@ -210,9 +260,9 @@ createApp({
                 </div>
             `);
             
-            // Add animated dots for rainfall
+            // Add animated dots for rainfall (Fixed - create separate markers)
             if (rainfall > 0) {
-                const animatedLayer = L.layerGroup();
+                const animatedMarkers = [];
                 for (let i = 0; i < 20; i++) {
                     const offsetLat = lat + (Math.random() - 0.5) * 0.1;
                     const offsetLon = lon + (Math.random() - 0.5) * 0.1;
@@ -223,20 +273,23 @@ createApp({
                         fillOpacity: 0.8,
                         weight: 1
                     });
-                    animatedLayer.addLayer(drop);
+                    drop.addTo(mapInstance); // Add directly to map
+                    animatedMarkers.push(drop);
                     
                     // Animate the drop
                     setInterval(() => {
-                        const newLat = drop.getLatLng().lat + (Math.random() - 0.5) * 0.01;
-                        const newLng = drop.getLatLng().lng + (Math.random() - 0.5) * 0.01;
-                        drop.setLatLng([newLat, newLng]);
+                        if (drop && mapInstance) {
+                            const newLat = drop.getLatLng().lat + (Math.random() - 0.5) * 0.01;
+                            const newLng = drop.getLatLng().lng + (Math.random() - 0.5) * 0.01;
+                            drop.setLatLng([newLat, newLng]);
+                        }
                     }, 2000);
                 }
-                circle.addLayer(animatedLayer);
             }
             
             return circle;
         };
+
 
         const createTemperatureLayer = (lat, lon, temp) => {
             let color, description;
@@ -266,15 +319,20 @@ createApp({
             // Add heat wave animation
             if (temp > 30) {
                 let opacity = 0.4;
-                setInterval(() => {
-                    opacity = opacity === 0.4 ? 0.6 : 0.4;
-                    circle.setStyle({ fillOpacity: opacity });
+                const interval = setInterval(() => {
+                    if (circle && mapInstance) {
+                        opacity = opacity === 0.4 ? 0.6 : 0.4;
+                        circle.setStyle({ fillOpacity: opacity });
+                    } else {
+                        clearInterval(interval);
+                    }
                 }, 1000);
             }
             
             return circle;
         };
 
+        // Create Wind Layer (Fixed)
         const createWindLayer = (lat, lon, windSpeed) => {
             let color, risk;
             if (windSpeed > 40) { color = '#ef4444'; risk = 'Severe'; }
@@ -299,24 +357,9 @@ createApp({
                 </div>
             `);
             
-            // Add wind direction indicators
-            const windGroup = L.layerGroup();
-            for (let i = 0; i < 8; i++) {
-                const angle = (i * 45) * Math.PI / 180;
-                const radius = 3000;
-                const x = lat + (Math.cos(angle) * radius / 111000);
-                const y = lon + (Math.sin(angle) * radius / (111000 * Math.cos(lat * Math.PI / 180)));
-                const arrow = L.polygon([
-                    [x, y],
-                    [x + (Math.cos(angle) * 500 / 111000), y + (Math.sin(angle) * 500 / (111000 * Math.cos(lat * Math.PI / 180)))],
-                    [x + (Math.cos(angle + 2.5) * 300 / 111000), y + (Math.sin(angle + 2.5) * 300 / (111000 * Math.cos(lat * Math.PI / 180)))]
-                ], { color: '#eab308', weight: 2 });
-                windGroup.addLayer(arrow);
-            }
-            circle.addLayer(windGroup);
-            
             return circle;
         };
+
 
         const createVegetationLayer = (lat, lon) => {
             const ndvi = Math.random() * 0.6 + 0.2; // Simulated NDVI value
@@ -346,6 +389,7 @@ createApp({
             return circle;
         };
 
+        // Create Heat Index Layer (Fixed)
         const createHeatIndexLayer = (lat, lon, heatIndex) => {
             let color, risk;
             if (heatIndex > 40) { color = '#dc2626'; risk = 'Danger'; }
@@ -373,6 +417,7 @@ createApp({
             return circle;
         };
 
+        // Create Soil Moisture Layer (Fixed)
         const createSoilMoistureLayer = (lat, lon) => {
             const moisture = Math.random() * 100; // Simulated soil moisture
             let color, status;
@@ -401,6 +446,7 @@ createApp({
             return circle;
         };
 
+
         // ==========================================
         // 5. TELEMETRY & DATA ACQUISITION
         // ==========================================
@@ -426,6 +472,11 @@ createApp({
         };
 
         const applyManualCoordinates = () => {
+            fetchOpenMeteoTelemetry();
+        };
+
+        const handleSectorChange = () => {
+            // Update weather data when sector changes
             fetchOpenMeteoTelemetry();
         };
 
@@ -1062,6 +1113,10 @@ createApp({
                 updateLeafletMap();
             }
         }, { deep: true });
+
+        watch(targetLocations, (newVal) => {
+            console.log('targetLocations changed:', newVal);
+        }, { deep: true });
         
         // ==========================================
         // 11. LIFECYCLE HOOKS
@@ -1076,6 +1131,10 @@ createApp({
             updateNetworkState();
             initConnectionMonitoring();
             updateConnectionQuality();
+
+            await loadVoices();
+            await fetchOpenMeteoTelemetry();
+            await generateFarmAIInsight();
             
             checkAuthStatus();
             
@@ -1109,21 +1168,213 @@ createApp({
             }
         });
 
+
+        // Text-to-Speech State
+        const isSpeaking = ref(false);
+        const selectedLanguage = ref('en');
+        const availableVoices = ref([]);
+
+        // Available languages for translation
+        const availableLanguages = ref([
+            { code: 'en', name: 'English', flag: '🇬🇧', nativeName: 'English' },
+            { code: 'yo', name: 'Yoruba', flag: '🇳🇬', nativeName: 'Èdè Yorùbá' },
+            { code: 'ha', name: 'Hausa', flag: '🇳🇬', nativeName: 'Hausa' },
+            { code: 'ig', name: 'Igbo', flag: '🇳🇬', nativeName: 'Asụsụ Igbo' },
+            { code: 'fr', name: 'French', flag: '🇫🇷', nativeName: 'Français' },
+            { code: 'es', name: 'Spanish', flag: '🇪🇸', nativeName: 'Español' },
+            { code: 'hi', name: 'Hindi', flag: '🇮🇳', nativeName: 'हिन्दी' },
+            { code: 'zh', name: 'Chinese', flag: '🇨🇳', nativeName: '中文' },
+            { code: 'ar', name: 'Arabic', flag: '🇸🇦', nativeName: 'العربية' }
+        ]);
+
+        // Function to load available voices
+        const loadVoices = () => {
+            return new Promise((resolve) => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length) {
+                    availableVoices.value = voices;
+                    resolve(voices);
+                } else {
+                    window.speechSynthesis.addEventListener('voiceschanged', () => {
+                        availableVoices.value = window.speechSynthesis.getVoices();
+                        resolve(availableVoices.value);
+                    });
+                }
+            });
+        };
+
+        // Text-to-Speech Function
+        const speakAdvisory = (text) => {
+            if (!text || isSpeaking.value) return;
+            
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Get preferred voice based on selected language
+            let voice = null;
+            if (selectedLanguage.value === 'yo') {
+                voice = availableVoices.value.find(v => v.lang.includes('yo') || v.name.includes('Yoruba'));
+            } else if (selectedLanguage.value === 'ha') {
+                voice = availableVoices.value.find(v => v.lang.includes('ha') || v.name.includes('Hausa'));
+            } else if (selectedLanguage.value === 'ig') {
+                voice = availableVoices.value.find(v => v.lang.includes('ig') || v.name.includes('Igbo'));
+            } else {
+                voice = availableVoices.value.find(v => v.lang === 'en-US' || v.lang === 'en-GB');
+            }
+            
+            if (voice) utterance.voice = voice;
+            
+            // Set language
+            utterance.lang = selectedLanguage.value === 'en' ? 'en-US' : selectedLanguage.value;
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            utterance.onstart = () => {
+                isSpeaking.value = true;
+            };
+            
+            utterance.onend = () => {
+                isSpeaking.value = false;
+            };
+            
+            utterance.onerror = () => {
+                isSpeaking.value = false;
+                console.error('Speech synthesis error');
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // Stop speaking
+        const stopSpeaking = () => {
+            window.speechSynthesis.cancel();
+            isSpeaking.value = false;
+        };
+
+        // Translation Function (using MyMemory API - free)
+        const translateText = async (text, targetLang) => {
+            if (!text || targetLang === 'en') return text;
+            
+            try {
+                // Using MyMemory API (free, no API key needed)
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`);
+                const data = await response.json();
+                return data.responseData.translatedText;
+            } catch (error) {
+                console.error('Translation error:', error);
+                return text; // Fallback to original text
+            }
+        };
+
+        // Translate entire AI report
+        const translateReport = async () => {
+            if (!aiReport.value || selectedLanguage.value === 'en') {
+                if (selectedLanguage.value === 'en') {
+                    // Reset to original if English selected
+                    await generateFarmAIInsight();
+                }
+                return;
+            }
+            
+            generatingReport.value = true;
+            
+            try {
+                const translatedReport = { ...aiReport.value };
+                
+                // Translate each text field
+                translatedReport.statusTitle = await translateText(aiReport.value.statusTitle, selectedLanguage.value);
+                translatedReport.currentSituation = await translateText(aiReport.value.currentSituation, selectedLanguage.value);
+                translatedReport.futureTip = await translateText(aiReport.value.futureTip, selectedLanguage.value);
+                
+                // Translate DOs
+                translatedReport.dos = await Promise.all(
+                    aiReport.value.dos.map(async (item) => ({
+                        title: await translateText(item.title, selectedLanguage.value),
+                        description: await translateText(item.description, selectedLanguage.value)
+                    }))
+                );
+                
+                // Translate DON'Ts
+                translatedReport.donts = await Promise.all(
+                    aiReport.value.donts.map(async (item) => ({
+                        title: await translateText(item.title, selectedLanguage.value),
+                        description: await translateText(item.description, selectedLanguage.value)
+                    }))
+                );
+                
+                // Translate metrics
+                translatedReport.metrics = {
+                    suitability: await translateText(aiReport.value.metrics.suitability, selectedLanguage.value),
+                    irrigation: await translateText(aiReport.value.metrics.irrigation, selectedLanguage.value),
+                    pestThreat: await translateText(aiReport.value.metrics.pestThreat, selectedLanguage.value),
+                    threatReason: await translateText(aiReport.value.metrics.threatReason, selectedLanguage.value)
+                };
+                
+                aiReport.value = translatedReport;
+                
+            } catch (error) {
+                console.error('Translation error:', error);
+            } finally {
+                generatingReport.value = false;
+            }
+        };
+
+        // Watch for language changes
+        watch(selectedLanguage, async (newLang) => {
+            if (aiReport.value && newLang !== 'en') {
+                await translateReport();
+            } else if (aiReport.value && newLang === 'en') {
+                // Reload original report
+                await generateFarmAIInsight();
+            }
+        });
+
+
+
         // ==========================================
         // 12. EXPOSED INTERFACE
         // ==========================================
         return {
-            activeTab, setActiveTab, locationMode, liveCoords, manualCoords, selectedLocationIndex, showMobileUserMenu, toggleMobileUserMenu,
-            activeCoordinates, activeLatLonString, activeLocationName, activeView, weatherData, 
-            loading, error, showAuthModal, authMode, isAuthenticated, currentUser, authForm, 
-            authMessage, authLoading, executeAuthSubmit, closeAuthWorkspace, logoutSession, switchEngineView, 
-            refreshTelemetry, formatDayName, getForecastIconClass, detectLiveLocation, 
-            applyManualCoordinates, generateFarmAIInsight, aiReport, generatingReport, cropSelection,
-            parseMarkdownToHtml, isChatOpen, chatMessage, chatMessages, isChatTyping, toggleChat, 
-            sendChatMessage, setChatPreset, activeAlerts, scrollChatBottom, isOnline, networkQuality, 
-            connectionType, showOfflineBanner,
+            // Navigation & UI
+            activeTab, setActiveTab, locationMode, 
+            liveCoords, manualCoords, selectedLocationIndex, 
+            targetLocations,  // CRITICAL: This was missing
+            showMobileUserMenu, toggleMobileUserMenu,
+            
+            // Computed
+            activeCoordinates, activeLatLonString, activeLocationName, activeView, 
+            
+            // Data
+            weatherData, loading, error, 
+            
+            // Auth
+            showAuthModal, authMode, isAuthenticated, currentUser, authForm, 
+            authMessage, authLoading, executeAuthSubmit, closeAuthWorkspace, logoutSession, 
+            
+            // Methods
+            switchEngineView, refreshTelemetry, formatDayName, getForecastIconClass, 
+            detectLiveLocation, applyManualCoordinates, handleSectorChange,
+            
+            // AI & Chat
+            generateFarmAIInsight, aiReport, generatingReport, cropSelection,
+            parseMarkdownToHtml, isChatOpen, chatMessage, chatMessages, isChatTyping, 
+            toggleChat, sendChatMessage, setChatPreset, scrollChatBottom,
+            
+            // Alerts & Network
+            activeAlerts, isOnline, networkQuality, connectionType, showOfflineBanner,
+            
+            // Disease
             diseaseReport, diseaseCropSelection, generateDiseaseReport,
-            activeMapLayers, toggleLayer, showPassword
+            
+            // Map Layers
+            activeMapLayers, toggleLayer, showPassword,
+            
+            // TTS & Translation
+            isSpeaking, selectedLanguage, availableLanguages, 
+            speakAdvisory, stopSpeaking, translateText, translateReport, availableVoices
         };
     }
 }).mount('#app');
